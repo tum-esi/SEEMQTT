@@ -1,0 +1,222 @@
+port 8884, 1 kB, 40 MHz
+time to establish SSL:2605
+time to publish 1024 Bytes in ms: 3
+time to establish SSL:2561
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2733
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2392
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2768
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2532
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2703
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2427
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2742
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2329
+time to publish 1024 Bytes in ms: 8
+time to establish SSL:2499
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2757
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2339
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2505
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2685
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2340
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2316
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2487
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2745
+time to publish 1024 Bytes in ms: 6
+time to establish SSL:2500
+time to publish 1024 Bytes in ms: 8
+
+
+port 8884, 5 kB, 40 MHz
+time to establish SSL:2637
+time to publish 5120 Bytes in ms: 9
+time to establish SSL:2552
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2702
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2493
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2742
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2314
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2619
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2483
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2742
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2314
+time to publish 5120 Bytes in ms: 10
+time to establish SSL:2322
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2959
+time to publish 5120 Bytes in ms: 9
+time to establish SSL:2517
+time to publish 5120 Bytes in ms: 14
+time to establish SSL:2773
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2446
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2516
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2589
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2563
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2654
+time to publish 5120 Bytes in ms: 11
+time to establish SSL:2577
+time to publish 5120 Bytes in ms: 11
+
+
+port 8884, 10 kB, 40 MHz
+time to establish SSL:2771
+time to publish 10240 Bytes in ms: 26
+time to establish SSL:2347
+time to publish 10240 Bytes in ms: 158
+time to establish SSL:2575
+time to publish 10240 Bytes in ms: 25
+time to establish SSL:2391
+time to publish 10240 Bytes in ms: 199
+time to establish SSL:2390
+time to publish 10240 Bytes in ms: 168
+time to establish SSL:2575
+time to publish 10240 Bytes in ms: 51
+time to establish SSL:2483
+time to publish 10240 Bytes in ms: 25
+time to establish SSL:2374
+time to publish 10240 Bytes in ms: 176
+time to establish SSL:2581
+time to publish 10240 Bytes in ms: 23
+time to establish SSL:2506
+time to publish 10240 Bytes in ms: 31
+time to establish SSL:2428
+time to publish 10240 Bytes in ms: 184
+time to establish SSL:2284
+time to publish 10240 Bytes in ms: 67
+time to establish SSL:2392
+time to publish 10240 Bytes in ms: 26
+time to establish SSL:2477
+time to publish 10240 Bytes in ms: 191
+time to establish SSL:2579
+time to publish 10240 Bytes in ms: 27
+time to establish SSL:2262
+time to publish 10240 Bytes in ms: 45
+time to establish SSL:2556
+time to publish 10240 Bytes in ms: 200
+time to establish SSL:2576
+time to publish 10240 Bytes in ms: 30
+time to establish SSL:2321
+time to publish 10240 Bytes in ms: 57
+time to establish SSL:2553
+time to publish 10240 Bytes in ms: 28
+
+
+port 8884, 15 kB, 40 MHz
+time to establish SSL:2761
+time to publish 15360 Bytes in ms: 52
+time to establish SSL:2402
+time to publish 15360 Bytes in ms: 38
+time to establish SSL:2502
+time to publish 15360 Bytes in ms: 46
+time to establish SSL:2543
+time to publish 15360 Bytes in ms: 204
+time to establish SSL:2566
+time to publish 15360 Bytes in ms: 39
+time to establish SSL:2589
+time to publish 15360 Bytes in ms: 57
+time to establish SSL:2494
+time to publish 15360 Bytes in ms: 38
+time to establish SSL:2343
+time to publish 15360 Bytes in ms: 180
+time to establish SSL:2566
+time to publish 15360 Bytes in ms: 63
+time to establish SSL:2459
+time to publish 15360 Bytes in ms: 40
+time to establish SSL:2540
+time to publish 15360 Bytes in ms: 193
+time to establish SSL:2747
+time to publish 15360 Bytes in ms: 43
+time to establish SSL:2573
+time to publish 15360 Bytes in ms: 40
+time to establish SSL:2464
+time to publish 15360 Bytes in ms: 197
+time to establish SSL:2566
+time to publish 15360 Bytes in ms: 102
+time to establish SSL:2734
+time to publish 15360 Bytes in ms: 48
+time to establish SSL:2470
+time to publish 15360 Bytes in ms: 40
+time to establish SSL:2333
+time to publish 15360 Bytes in ms: 175
+time to establish SSL:2564
+time to publish 15360 Bytes in ms: 57
+time to establish SSL:2463
+time to publish 15360 Bytes in ms: 38
+
+
+port 8884, 20 kB, 40 MHz
+time to establish SSL:2393
+time to publish 20480 Bytes in ms: 48
+time to establish SSL:2595
+time to publish 20480 Bytes in ms: 60
+time to establish SSL:2734
+time to publish 20480 Bytes in ms: 37
+time to establish SSL:2541
+time to publish 20480 Bytes in ms: 190
+time to establish SSL:2559
+time to publish 20480 Bytes in ms: 42
+time to establish SSL:2585
+time to publish 20480 Bytes in ms: 40
+time to establish SSL:2261
+time to publish 20480 Bytes in ms: 194
+time to establish SSL:2566
+time to publish 20480 Bytes in ms: 43
+time to establish SSL:2580
+time to publish 20480 Bytes in ms: 43
+time to establish SSL:2266
+time to publish 20480 Bytes in ms: 202
+time to establish SSL:2571
+time to publish 20480 Bytes in ms: 39
+time to establish SSL:2512
+time to publish 20480 Bytes in ms: 58
+time to establish SSL:2546
+time to publish 20480 Bytes in ms: 43
+time to establish SSL:2427
+time to publish 20480 Bytes in ms: 184
+time to establish SSL:2371
+time to publish 20480 Bytes in ms: 62
+time to establish SSL:2736
+time to publish 20480 Bytes in ms: 41
+time to establish SSL:2253
+time to publish 20480 Bytes in ms: 193
+time to establish SSL:2558
+time to publish 20480 Bytes in ms: 39
+time to establish SSL:2761
+time to publish 20480 Bytes in ms: 42
+time to establish SSL:2466
+time to publish 20480 Bytes in ms: 201
+
+20 kB shows error msg:
+1593377995: New client connected from 192.168.178.36 as ESP32Client-e169 (c1, k15, u'192.168.178.32').
+1593377996: Socket error on client ESP32Client-e169, disconnecting.
+
+
+1593378309: New connection from 192.168.178.36 on port 8884.
+1593378311: New client connected from 192.168.178.36 as ESP32Client-a6a9 (c1, k15, u'192.168.178.32').
+1593378312: Client ESP32Client-a6a9 disconnected.
