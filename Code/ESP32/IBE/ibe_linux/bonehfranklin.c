@@ -22,6 +22,21 @@
 #include<pbc/pbc.h>
 #include<pbc/pbc_test.h>
 
+
+#define TYPEA_PARAMS \
+"type a\n" \
+"q 87807107996633125224377819847540498158068831994142082" \
+"1102865339926647563088022295707862517942266222142315585" \
+"8769582317459277713367317481324925129998224791\n" \
+"h 12016012264891146079388821366740534204802954401251311" \
+"822919615131047207289359704531102844802183906537786776\n" \
+"r 730750818665451621361119245571504901405976559617\n" \
+"exp2 159\n" \
+"exp1 107\n" \
+"sign1 1\n" \
+"sign0 1\n"
+
+
 void PrintHEX(unsigned char* str, int len) {
 
     for (int i = 0; i < len; ++i) {
@@ -55,6 +70,7 @@ int main(int argc, char **argv) {
      * 4. Decrypt:
      *  Given c = <u, v>, m = v XOR H2(e(Did, u))
      */
+    printf("starting ibe program ... \n");
 
 	pairing_t pairing;
 	element_t P, Ppub, Did, Qid, U, s, r, xt, gid;
@@ -77,7 +93,7 @@ int main(int argc, char **argv) {
 	/***
 	pairing function initalization from the input file which contains the pairing parameters
 	***/
-	pbc_demo_pairing_init(pairing, argc, argv);
+    pairing_init_set_buf(pairing, TYPEA_PARAMS, strlen(TYPEA_PARAMS));
   	if (!pairing_is_symmetric(pairing)) pbc_die("pairing must be symmetric");
 
 	/***
@@ -100,6 +116,8 @@ int main(int argc, char **argv) {
 	***/
 	element_init_GT(gid, pairing);
 	element_init_GT(xt, pairing);
+
+    printf("finished initialization!\n");
 	
 	/***
 	PKG generation of P, s and Ppub
@@ -115,8 +133,8 @@ int main(int argc, char **argv) {
 	key generation
 	***/
 	if(SHA1(id, 20, (unsigned char *)hash) == NULL) {
-			ERR_error_string(ERR_get_error(),err);
-			printf("%s\n",err);			
+        ERR_error_string(ERR_get_error(),err);
+        printf("%s\n",err);
     }
 
 	element_from_hash(Qid, hash, strlen(hash));
@@ -177,7 +195,7 @@ int main(int argc, char **argv) {
 		printf(":%d %d %d\n",i,m[i],mv[i]);
 	}
 	
-	printf("\n%d\n",strncmp(m,mv,80));
+	printf("\nComparison result: %d\n",strncmp(m,mv,80));
 
     printf("message in plaintextP: \n");
     PrintHEX(m, 80);
