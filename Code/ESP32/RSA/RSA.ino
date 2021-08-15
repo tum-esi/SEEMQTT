@@ -33,7 +33,7 @@ const unsigned char iot_pr_key[]= \
 "-----END RSA PRIVATE KEY-----\n";
 
 
-#define MSG_SIZE 4000
+#define MSG_SIZE 117
 #define C_SIZE 128
 //#define DBG
 
@@ -180,6 +180,8 @@ void setup() {
     free(plaintext);
     free(cipher);
 }
+
+
 
 void loop() {
 }

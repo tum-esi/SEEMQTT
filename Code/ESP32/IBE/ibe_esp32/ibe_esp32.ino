@@ -19,31 +19,35 @@
 "sign1 1\n" \
 "sign0 1\n"
 
-//#define DBG_MSG
+#define DBG_MSG
 
 
-#define enc_dec_times 100
-#define MSG_SIZE 1024
+#define enc_dec_times 1
+#define MSG_SIZE 6
 #define HASH_LEN 32
+#define PRNT 8
 
-const int LedPin = 2;
 unsigned long lastMsg = 0;
 int value = 0;
 int loop_times;
 unsigned long stime, etime, p1time, p2time, p3time, p4time, sumtime, sumtimep, sumtimexor, sumtimepow, sumtimemul;
-char m[MSG_SIZE] = {0}, mv[MSG_SIZE] = {0}, c[MSG_SIZE] = {0};
+char m[MSG_SIZE] = {0}; 
+char mv[MSG_SIZE] = {0}, c[MSG_SIZE] = {0};
 
 void setup() {
 
     Serial.begin(115200);
-    pinMode(LedPin, OUTPUT);
 
+    
     int i = 0, j = 0;
     char *id = "test@tum.de";
 
 
     /***initialize the message which is going to be signed***/
     esp_fill_random(m, MSG_SIZE);
+
+    Serial.printf("Message:"); 
+    PrintHEX((unsigned  char *)m, 0,MSG_SIZE );
 
     /***
     PKG initialization
@@ -53,7 +57,6 @@ void setup() {
     #endif
 
     stime = micros();
-
     pairing_t pairing;
     element_t P, Ppub, Did, Qid, U, s, r, xt, gid;
     unsigned char hash[HASH_LEN] = {0};
@@ -91,7 +94,7 @@ void setup() {
     ***/
     element_random(P);
     element_random(s);
-
+    
     unsigned long multime = micros();
     element_mul_zn(Ppub, P, s);
 
@@ -155,33 +158,19 @@ void setup() {
     #endif
 
     loop_times = enc_dec_times;
-    sumtime = 0;
-    sumtimep = 0;
-    sumtimepow = 0;
-    sumtimexor = 0;
-    sumtimemul = 0;
 
-    unsigned long p3pair, p3xor, p3time, p3times, p3pow, p3mul;
+   //unsigned long p3pair, p3xor, p3time, p3times, p3pow, p3mul;
+    unsigned long start = micros();
+    element_pairing(gid, Qid, Ppub); //Happen once 
+    unsigned long onccover = micros() - start; 
+    Serial.printf("One time overhead for Encryption: %d\n", onccover);
     while(loop_times) {
-      
-        p3times = micros();
-
+        start = micros();
         element_random(r);
 
-        stime = micros();
         element_mul_zn(U, P, r);
-        p3mul = micros() - stime;
-        
-        stime = micros();
-        
-        element_pairing(gid, Qid, Ppub);
 
-        etime = micros();
-        p3pair = etime - stime;
-
-        stime = micros();
         element_pow_zn(gid, gid, r);
-        p3pow = micros() - stime;
 
         gs = (unsigned char *)malloc(element_length_in_bytes(gid));
         element_to_bytes(gs, gid);
@@ -198,8 +187,6 @@ void setup() {
             Serial.println("failed to hash gs!");
         }
 
-        stime = micros();
-
         j = 0;
         for (i = 0; i < MSG_SIZE; i++) {
             if (j >= HASH_LEN) {
@@ -207,36 +194,25 @@ void setup() {
             }
             c[i] = m[i] ^ hash[j];
             j++;
+           
         }
-
+        Serial.printf("Cipher Text:"); 
+        PrintHEX((unsigned char *)c, 0,MSG_SIZE );
         free(gs);
 
-        etime= micros();
+         unsigned long endenc = micros() - start;
+        Serial.printf("time p3: \t%lu (us)\n", endenc);
 
-        p3time = etime - p3times;
-        p3xor = etime - stime;
-
-        sumtime = sumtime + p3time;
-        sumtimep = sumtimep + p3pair;
-        sumtimepow = sumtimepow + p3pow;
-        sumtimexor = sumtimexor + p3xor;
-        sumtimemul = sumtimemul + p3mul;
-
-        Serial.printf("iteration: %d\n", loop_times);
-        Serial.printf("time pairing: \t%lu (us)\n", p3pair);
-        Serial.printf("time mul: \t%lu (us)\n", p3mul);
-        Serial.printf("time pow: \t%lu (us)\n", p3pow);
-        Serial.printf("time xor: \t%lu (us)\n", p3xor);
-        Serial.printf("time p3: \t%lu (us)\n", p3time);
+       // Serial.printf("iteration: %d\n", loop_times);
+          //Serial.printf("time pairing: \t%lu (us)\n", p3pair);
+          //Serial.printf("time mul: \t%lu (us)\n", p3mul);
+          //Serial.printf("time pow: \t%lu (us)\n", p3pow);
+          //Serial.printf("time xor: \t%lu (us)\n", p3xor);
+          //Serial.printf("time p3: \t%lu (us)\n", p3time);
 
         loop_times -= 1;
     }
     
-    p3time = sumtime/enc_dec_times;
-    p3pair = sumtimep/enc_dec_times;
-    p3pow = sumtimepow/enc_dec_times;
-    p3xor = sumtimexor/enc_dec_times;
-    p3mul = sumtimemul/enc_dec_times;
 
     #ifdef DBG_MSG
     element_printf("++r: %B\n",r);
@@ -283,7 +259,8 @@ void setup() {
             mv[i] = c[i] ^ hash[j];
             j++;
         }
-
+        Serial.printf("Plain text:"); 
+        PrintHEX((unsigned char *)mv, 0,MSG_SIZE );
         free(gs);
 
         etime = micros();
@@ -328,10 +305,10 @@ void setup() {
     Serial.printf("Extract time:    \t\t%lu (us)\n", p2time);
     Serial.printf("Encryption time: \t\t%lu (us)\n", p3time);
     Serial.printf("Encryption Hash Qid time: \t%lu (us)\n", qtime);
-    Serial.printf("Encryption pairing time: \t%lu (us)\n", p3pair);
-    Serial.printf("Encryption mul time: \t\t%lu (us)\n", p3mul);
-    Serial.printf("Encryption pow time: \t\t%lu (us)\n", p3pow);
-    Serial.printf("Encryption xor time: \t\t%lu (us)\n", p3xor);
+    //Serial.printf("Encryption pairing time: \t%lu (us)\n", p3pair);
+    //Serial.printf("Encryption mul time: \t\t%lu (us)\n", p3mul);
+      //Serial.printf("Encryption pow time: \t\t%lu (us)\n", p3pow);
+      //Serial.printf("Encryption xor time: \t\t%lu (us)\n", p3xor);
     Serial.printf("Decryption time: \t\t%lu (us)\n", p4time);
     Serial.printf("Decryption pairing time: \t%lu (us)\n", p4pair);
     Serial.printf("Decryption xor time: \t\t%lu (us)\n", p4xor);
@@ -354,11 +331,14 @@ void loop() {
 
 }
 
-void PrintHEX(unsigned char* str, int start_byte, int end_byte) {
-
+void PrintHEX( unsigned char* str, int start_byte, int end_byte) {
+    if (start_byte < 0)
+        start_byte = 0;
+    
     for (int i = start_byte; i < end_byte; ++i) {
         printf("%.2X ", str[i]);
+      if (i+1 %PRNT ==0)
+         printf("\n");    
     }
-
     printf("\n");
 }

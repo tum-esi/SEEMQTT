@@ -34,7 +34,7 @@ const unsigned char iot_pr_key[]= \
 "-----END RSA PRIVATE KEY-----\n";
 
 
-#define MSG_SIZE 117
+#define MSG_SIZE 120
 #define C_SIZE 128
 
 unsigned long stime, etime, enctime, dectime;
@@ -59,7 +59,7 @@ void setup() {
     size_t oolen;
     
     esp_fill_random(m, MSG_SIZE);
-
+    
     int error_code;
 
     stime = micros();
@@ -110,7 +110,25 @@ void setup() {
     Serial.printf("time to enc: \t%lu (us)\n", enctime);
     Serial.printf("time to dec: \t%lu (us)\n", dectime);
 }
+void Compare(const unsigned char * t1, const unsigned char t2 , int len)
+{
+  int i = 0 ; 
+  for (;i<len; i++){
+    if (t1[i]!=t2[i]){
+      return -1; 
+    }
+  }
+  return 0; 
+}
 
+void PrintHEX(const unsigned char* str, int start_byte, int end_byte) {
+
+    for (int i = start_byte; i < end_byte; ++i) {
+        printf("%.2X ", str[i]);
+    }
+
+    printf("\n");
+}
 void loop() {
 
 }
