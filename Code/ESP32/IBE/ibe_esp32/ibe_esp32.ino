@@ -19,176 +19,164 @@
 "sign1 1\n" \
 "sign0 1\n"
 
-#define DBG_MSG
+//#define DBG_MSG
 
 
-#define enc_dec_times 1
-#define MSG_SIZE 6
 #define HASH_LEN 32
 #define PRNT 8
 
+
+int sizelist[9]={1,8, 16,32,64,128, 256,512, 1024}; 
 unsigned long lastMsg = 0;
-int value = 0;
-int loop_times;
+int loop_times  = 30;
 unsigned long stime, etime, p1time, p2time, p3time, p4time, sumtime, sumtimep, sumtimexor, sumtimepow, sumtimemul;
-char m[MSG_SIZE] = {0}; 
-char mv[MSG_SIZE] = {0}, c[MSG_SIZE] = {0};
+char *id = "test@tum.de";
 
 void setup() {
 
     Serial.begin(115200);
-
-    
-    int i = 0, j = 0;
-    char *id = "test@tum.de";
+    printf("MsgSZ\t Setup \t\t Extract \t  Enc(OTO) \t Enc \t\t Dec\n");
 
 
+    for (int indx = 0 ; indx < 10; indx++)
+    {
+      printf("********************************************************************************\n");
+      int msgsize = sizelist[indx]; 
+      char m[msgsize] = {0}; 
+      char mv[] = {0}, c[msgsize] = {0};
+
+ 
     /***initialize the message which is going to be signed***/
-    esp_fill_random(m, MSG_SIZE);
+    esp_fill_random(m, msgsize);
+  
 
-    Serial.printf("Message:"); 
-    PrintHEX((unsigned  char *)m, 0,MSG_SIZE );
+    for (int loopindx = 0 ; loopindx< loop_times; loopindx++)
+    {
+      //Serial.println(">>>>>>>>>> Time Summary >>>>>>>>>>");
+      int i = 0, j = 0;
+      /***
+       * PKG initialization
+      ***/
+      #ifdef DBG_MSG
+      Serial.println(">>>>>>>>>> Phase 1: Setup >>>>>>>>>>");
+      #endif
 
-    /***
-    PKG initialization
-    ***/
-    #ifdef DBG_MSG
-    Serial.println(">>>>>>>>>> Phase 1: Setup >>>>>>>>>>");
-    #endif
+      stime = micros();
+      pairing_t pairing;
+      element_t P, Ppub, Did, Qid, U, s, r, xt, gid;
+      unsigned char hash[HASH_LEN] = {0};
+      unsigned char *gs = NULL;
 
-    stime = micros();
-    pairing_t pairing;
-    element_t P, Ppub, Did, Qid, U, s, r, xt, gid;
-    unsigned char hash[HASH_LEN] = {0};
-    unsigned char *gs = NULL;
+      /***
+       * pairing function initalization from the input file which contains the pairing parameters
+      ***/
+      pairing_init_set_buf(pairing, TYPEA_PARAMS, strlen(TYPEA_PARAMS));
+      if (!pairing_is_symmetric(pairing)) pbc_die("pairing must be symmetric");
 
-    /***
-    pairing function initalization from the input file which contains the pairing parameters
-    ***/
-    pairing_init_set_buf(pairing, TYPEA_PARAMS, strlen(TYPEA_PARAMS));
-    if (!pairing_is_symmetric(pairing)) pbc_die("pairing must be symmetric");
+      /***
+       * initialization of G1 elements
+      ***/
+      element_init_G1(P, pairing);
+      element_init_G1(Ppub, pairing);
+      element_init_G1(Qid, pairing);
+      element_init_G1(Did, pairing);
+      element_init_G1(U, pairing);
 
-    /***
-    initialization of G1 elements
-    ***/
-    element_init_G1(P, pairing);
-    element_init_G1(Ppub, pairing);
-    element_init_G1(Qid, pairing);
-    element_init_G1(Did, pairing);
-    element_init_G1(U, pairing);
+      /***
+       * initialization of Zr elements
+      ***/
+      element_init_Zr(s, pairing);
+      element_init_Zr(r, pairing);
 
-    /***
-    initialization of Zr elements
-    ***/
-    element_init_Zr(s, pairing);
-    element_init_Zr(r, pairing);
+      /***
+       * initialization of GT elements
+      ***/
+      element_init_GT(gid, pairing);
+      element_init_GT(xt, pairing);
 
-    /***
-    initialization of GT elements
-    ***/
-    element_init_GT(gid, pairing);
-    element_init_GT(xt, pairing);
-
-    /***
-    PKG generation of P, s and Ppub
-    ***/
-    element_random(P);
-    element_random(s);
+      /***
+      * PKG generation of P, s and Ppub
+      ***/
+      element_random(P);
+      element_random(s);
     
-    unsigned long multime = micros();
-    element_mul_zn(Ppub, P, s);
+      element_mul_zn(Ppub, P, s);
 
-    etime = micros();
-    p1time = etime - stime;
-    multime = etime - multime;
+      etime = micros();
+      p1time = etime - stime;
+    
    
-    #ifdef DBG_MSG 
-    element_printf("++s: %B\n",s);
-    element_printf("++P:  %B\n", P);
-    element_printf("++Ppub: %B\n", Ppub);
-    #endif
+      #ifdef DBG_MSG 
+      element_printf("++s: %B\n",s);
+      element_printf("++P:  %B\n", P);
+      element_printf("++Ppub: %B\n", Ppub);
+      #endif
 
-    Serial.printf("Setup time:\t\t%lu (us)\n", p1time);
-    Serial.printf("Mul time:\t\t%lu (us)\n", multime);
+      //Serial.printf("Setup time:\t\t\t%lu (us)\n", p1time);
 
-    /***
-    key generation
-    ***/
-    #ifdef DBG_MSG
-    Serial.println(">>>>>>>>>> Phase 2: Extract >>>>>>>>>>");
-    #endif
+      /***
+       * key generation
+       ***/
+      #ifdef DBG_MSG
+      Serial.println(">>>>>>>>>> Phase 2: Extract >>>>>>>>>>");
+      #endif
 
-    stime = micros();
+      stime = micros();
+      int hash_ret;
 
-    int hash_ret;
-
-    unsigned long qtime = micros();
-    hash_ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (unsigned char *)id, strlen(id), hash);
-    if(hash_ret != 0) {
+      unsigned long qtime = micros();
+      hash_ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (unsigned char *)id, strlen(id), hash);
+      if(hash_ret != 0) {
         Serial.println("failed to hash ID!");
-    }
-    unsigned long hqtime = micros() - qtime;
+      }
 
-    element_from_hash(Qid, hash, HASH_LEN);
-
-    multime = micros();
+     element_from_hash(Qid, hash, HASH_LEN);
    
-    element_mul_zn(Did, Qid, s);
+      element_mul_zn(Did, Qid, s);
 
-    etime = micros();
-    p2time = etime - stime;
-    qtime = multime - qtime;
-    multime = etime - multime;
+      etime = micros();
+      p2time = etime - stime;
    
-    #ifdef DBG_MSG 
-    element_printf("++Qid: %B\n", Qid);
-    element_printf("++Did: %B\n", Did);
-    #endif
+      #ifdef DBG_MSG 
+      element_printf("++Qid: %B\n", Qid);
+      element_printf("++Did: %B\n", Did);
+      #endif
 
-    Serial.printf("Extract time:    \t\t%lu (us)\n", p2time);
-    Serial.printf("Hash Qid time:   \t\t%lu (us)\n", hqtime);
-    Serial.printf("Element from hash time: \t%lu (us)\n", qtime - hqtime);
-    Serial.printf("Extract Did time:\t\t%lu (us)\n", multime);
+      //Serial.printf("Extract time:    \t\t%lu (us)\n", p2time);
+      /***
+       * encryption
+       ***/
+      #ifdef DBG_MSG
+       Serial.println(">>>>>>>>>> Phase 3: Encryption >>>>>>>>>>");
+      #endif
 
-    /***
-    encryption
-    ***/
-    #ifdef DBG_MSG
-    Serial.println(">>>>>>>>>> Phase 3: Encryption >>>>>>>>>>");
-    #endif
+      unsigned long start = micros();
+      element_pairing(gid, Qid, Ppub); //Happen once 
+      unsigned long onccover = micros() - start; 
+      //Serial.printf("Onetime Enc overhead:      \t%lu (us)\n", onccover);
+      start = micros();
+      element_random(r);
 
-    loop_times = enc_dec_times;
+      element_mul_zn(U, P, r);
 
-   //unsigned long p3pair, p3xor, p3time, p3times, p3pow, p3mul;
-    unsigned long start = micros();
-    element_pairing(gid, Qid, Ppub); //Happen once 
-    unsigned long onccover = micros() - start; 
-    Serial.printf("One time overhead for Encryption: %d\n", onccover);
-    while(loop_times) {
-        start = micros();
-        element_random(r);
+      element_pow_zn(gid, gid, r);
 
-        element_mul_zn(U, P, r);
+      gs = (unsigned char *)malloc(element_length_in_bytes(gid));
+      element_to_bytes(gs, gid);
 
-        element_pow_zn(gid, gid, r);
-
-        gs = (unsigned char *)malloc(element_length_in_bytes(gid));
-        element_to_bytes(gs, gid);
-
-        #ifdef DBG_MSG
-        Serial.printf("gid length: %d\n", element_length_in_bytes(gid));
-        Serial.printf("string length of gs: %d\n", strlen((char *)gs));
-        Serial.printf("id length: %d\n", strlen(id));
-        Serial.printf("size of gs: %d\n", sizeof(gs));
-        #endif
-
-        hash_ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (unsigned char *)gs, element_length_in_bytes(gid), hash);
-        if (hash_ret != 0) {
-            Serial.println("failed to hash gs!");
+      #ifdef DBG_MSG
+      Serial.printf("gid length: %d\n", element_length_in_bytes(gid));
+      Serial.printf("string length of gs: %d\n", strlen((char *)gs));
+      Serial.printf("id length: %d\n", strlen(id));
+      Serial.printf("size of gs: %d\n", sizeof(gs));
+      #endif
+      hash_ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (unsigned char *)gs, element_length_in_bytes(gid), hash);
+      if (hash_ret != 0) {
+        Serial.println("failed to hash gs!");
         }
 
         j = 0;
-        for (i = 0; i < MSG_SIZE; i++) {
+        for (i = 0; i < msgsize; i++) {
             if (j >= HASH_LEN) {
                 j = 0;
             }
@@ -196,122 +184,65 @@ void setup() {
             j++;
            
         }
-        Serial.printf("Cipher Text:"); 
-        PrintHEX((unsigned char *)c, 0,MSG_SIZE );
         free(gs);
+        
+        unsigned long endenc = micros() - start;
+        //Serial.printf("Encryption time:\t\t%lu (us)\n", endenc);
 
-         unsigned long endenc = micros() - start;
-        Serial.printf("time p3: \t%lu (us)\n", endenc);
-
-       // Serial.printf("iteration: %d\n", loop_times);
-          //Serial.printf("time pairing: \t%lu (us)\n", p3pair);
-          //Serial.printf("time mul: \t%lu (us)\n", p3mul);
-          //Serial.printf("time pow: \t%lu (us)\n", p3pow);
-          //Serial.printf("time xor: \t%lu (us)\n", p3xor);
-          //Serial.printf("time p3: \t%lu (us)\n", p3time);
-
-        loop_times -= 1;
-    }
-    
-
-    #ifdef DBG_MSG
-    element_printf("++r: %B\n",r);
-    element_printf("++U: %B\n",U);
-    element_printf("++gid: %B\n",gid);
-    #endif
-
-    /***
+      #ifdef DBG_MSG
+       element_printf("++r: %B\n",r);
+       element_printf("++U: %B\n",U);
+       element_printf("++gid: %B\n",gid);
+      #endif
+      /***
     decryption
     ***/
     #ifdef DBG_MSG
     Serial.println(">>>>>>>>>> Phase 4: Decryption >>>>>>>>>>");
     #endif
-
-    loop_times = enc_dec_times;
+    
     sumtime = 0;
-    sumtimep = 0;
-    sumtimexor = 0;
-    unsigned long p4time;
-    unsigned long p4times;
-    unsigned long p4pair;
-    unsigned long p4xor;
-
-    while(loop_times) {
-
-        p4times = micros();
-        element_pairing(xt, Did, U);
-        p4pair = micros() - p4times;
-
-        gs = (unsigned char *)malloc(element_length_in_bytes(xt));
-        element_to_bytes(gs, xt);
-
-        hash_ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (unsigned char *)gs, element_length_in_bytes(xt), hash);
-        if(hash_ret != 0) {
-            Serial.println("failed to hash gs in decryption");
-        }
-
-        stime = micros();
-        j = 0;
-        for (i = 0; i < MSG_SIZE; i++) {
-            if (j >= HASH_LEN) {
-                j = 0;
+    unsigned long p4time = micros();
+    element_pairing(xt, Did, U);
+    gs = (unsigned char *)malloc(element_length_in_bytes(xt));
+    element_to_bytes(gs, xt);
+    hash_ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (unsigned char *)gs, element_length_in_bytes(xt), hash);
+    if(hash_ret != 0) {
+      Serial.println("failed to hash gs in decryption");
+      }
+     j = 0;
+     for (i = 0; i < msgsize; i++) {
+       if (j >= HASH_LEN) {
+              j = 0;
             }
-            mv[i] = c[i] ^ hash[j];
-            j++;
+        mv[i] = c[i] ^ hash[j];
+        j++;
         }
-        Serial.printf("Plain text:"); 
-        PrintHEX((unsigned char *)mv, 0,MSG_SIZE );
         free(gs);
 
         etime = micros();
-        p4xor = etime - stime;
-        p4time = etime - p4times;
+        p4time = etime - p4time;
+       // Serial.printf("Decryption time: \t\t%lu (us)\n", p4time);
 
-        sumtime = sumtime + p4time;
-        sumtimep = sumtimep + p4pair;
-        sumtimexor = sumtimexor + p4xor;
-
-        Serial.printf("iteration: %d\n", loop_times);
-        Serial.printf("time pairing: \t%lu (us)\n", p4pair);
-        Serial.printf("time xor: \t%lu (us)\n", p4xor);
-        Serial.printf("time p4: \t%lu (us)\n", p4time);
-
-        loop_times -= 1;
-    }
-    
-    p4pair = sumtimep/enc_dec_times;
-    p4xor = sumtimexor/enc_dec_times;
-    p4time = sumtime/enc_dec_times;
-
-    #ifdef DBG_MSG
+        #ifdef DBG_MSG
     element_printf("e(Did,U):%B\n",xt);
     #endif
 
-    printf("Result: %d\n",strncmp(m,mv,MSG_SIZE));
+    //printf("Result: %d\n",strncmp(m,mv,msgsize));
 
     #ifdef DBG_MSG
     printf("message in plaintext: \n");
-    PrintHEX((unsigned char *)m, MSG_SIZE-32, MSG_SIZE);
+    PrintHEX((unsigned char *)m, msgsize-32, msgsize);
 
     printf("decrypted message: \n");
-    PrintHEX((unsigned char *)mv, MSG_SIZE-32, MSG_SIZE);
+    PrintHEX((unsigned char *)mv, msgsize-32, msgsize);
 
     printf("encrypted message: \n");
-    PrintHEX((unsigned char *)c, MSG_SIZE-32, MSG_SIZE);
+    PrintHEX((unsigned char *)c, msgsize-32, msgsize);
     #endif
 
-    Serial.println(">>>>>>>>>> Time Summary >>>>>>>>>>");
-    Serial.printf("Setup time:      \t\t%lu (us)\n", p1time);
-    Serial.printf("Extract time:    \t\t%lu (us)\n", p2time);
-    Serial.printf("Encryption time: \t\t%lu (us)\n", p3time);
-    Serial.printf("Encryption Hash Qid time: \t%lu (us)\n", qtime);
-    //Serial.printf("Encryption pairing time: \t%lu (us)\n", p3pair);
-    //Serial.printf("Encryption mul time: \t\t%lu (us)\n", p3mul);
-      //Serial.printf("Encryption pow time: \t\t%lu (us)\n", p3pow);
-      //Serial.printf("Encryption xor time: \t\t%lu (us)\n", p3xor);
-    Serial.printf("Decryption time: \t\t%lu (us)\n", p4time);
-    Serial.printf("Decryption pairing time: \t%lu (us)\n", p4pair);
-    Serial.printf("Decryption xor time: \t\t%lu (us)\n", p4xor);
+    printf("%d \t %lu \t%lu \t %lu \t %lu \t %lu\n", msgsize, p1time,p2time,onccover,endenc,p4time );
+
 
     /***free mem***/
     element_clear(P);
@@ -324,6 +255,8 @@ void setup() {
     element_clear(xt);
     element_clear(s);
     pairing_clear(pairing);
+     }
+  }  
 }
 
 
