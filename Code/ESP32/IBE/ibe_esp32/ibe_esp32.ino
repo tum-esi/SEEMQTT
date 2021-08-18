@@ -26,7 +26,7 @@
 #define PRNT 8
 
 
-int sizelist[9]={1,8, 16,32,64,128, 256,512, 1024}; 
+int sizelist[9]={1,8, 16,32,64,128, 256,512, 1024};
 unsigned long lastMsg = 0;
 int loop_times  = 30;
 unsigned long stime, etime, p1time, p2time, p3time, p4time, sumtime, sumtimep, sumtimexor, sumtimepow, sumtimemul;
@@ -41,14 +41,14 @@ void setup() {
     for (int indx = 0 ; indx < 10; indx++)
     {
       printf("********************************************************************************\n");
-      int msgsize = sizelist[indx]; 
-      char m[msgsize] = {0}; 
+      int msgsize = sizelist[indx];
+      char m[msgsize] = {0};
       char mv[] = {0}, c[msgsize] = {0};
 
- 
+
     /***initialize the message which is going to be signed***/
     esp_fill_random(m, msgsize);
-  
+
 
     for (int loopindx = 0 ; loopindx< loop_times; loopindx++)
     {
@@ -99,14 +99,14 @@ void setup() {
       ***/
       element_random(P);
       element_random(s);
-    
+
       element_mul_zn(Ppub, P, s);
 
       etime = micros();
       p1time = etime - stime;
-    
-   
-      #ifdef DBG_MSG 
+
+
+      #ifdef DBG_MSG
       element_printf("++s: %B\n",s);
       element_printf("++P:  %B\n", P);
       element_printf("++Ppub: %B\n", Ppub);
@@ -120,24 +120,23 @@ void setup() {
       #ifdef DBG_MSG
       Serial.println(">>>>>>>>>> Phase 2: Extract >>>>>>>>>>");
       #endif
-
-      stime = micros();
-      int hash_ret;
-
       unsigned long qtime = micros();
+      int hash_ret;
+      stime = micros();
+      // QID -= H(id). This operation is needed during the encryption too.  Therefore its time should be added there
       hash_ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (unsigned char *)id, strlen(id), hash);
       if(hash_ret != 0) {
         Serial.println("failed to hash ID!");
       }
+      element_from_hash(Qid, hash, HASH_LEN);
+      unsigned long eqidtime = micros() -stime ;
 
-     element_from_hash(Qid, hash, HASH_LEN);
-   
       element_mul_zn(Did, Qid, s);
 
       etime = micros();
       p2time = etime - stime;
-   
-      #ifdef DBG_MSG 
+
+      #ifdef DBG_MSG
       element_printf("++Qid: %B\n", Qid);
       element_printf("++Did: %B\n", Did);
       #endif
@@ -151,8 +150,8 @@ void setup() {
       #endif
 
       unsigned long start = micros();
-      element_pairing(gid, Qid, Ppub); //Happen once 
-      unsigned long onccover = micros() - start; 
+      element_pairing(gid, Qid, Ppub); //Happen once
+      unsigned long onccover = micros() - start;
       //Serial.printf("Onetime Enc overhead:      \t%lu (us)\n", onccover);
       start = micros();
       element_random(r);
@@ -182,10 +181,10 @@ void setup() {
             }
             c[i] = m[i] ^ hash[j];
             j++;
-           
+
         }
         free(gs);
-        
+
         unsigned long endenc = micros() - start;
         //Serial.printf("Encryption time:\t\t%lu (us)\n", endenc);
 
@@ -200,7 +199,7 @@ void setup() {
     #ifdef DBG_MSG
     Serial.println(">>>>>>>>>> Phase 4: Decryption >>>>>>>>>>");
     #endif
-    
+
     sumtime = 0;
     unsigned long p4time = micros();
     element_pairing(xt, Did, U);
@@ -241,7 +240,7 @@ void setup() {
     PrintHEX((unsigned char *)c, msgsize-32, msgsize);
     #endif
 
-    printf("%d \t %lu \t%lu \t %lu \t %lu \t %lu\n", msgsize, p1time,p2time,onccover,endenc,p4time );
+    printf("%d \t %lu \t%lu \t %lu \t %lu \t %lu\n", msgsize, p1time,p2time,onccover +eqidtime,endenc,p4time );
 
 
     /***free mem***/
@@ -256,7 +255,7 @@ void setup() {
     element_clear(s);
     pairing_clear(pairing);
      }
-  }  
+  }
 }
 
 
@@ -267,11 +266,11 @@ void loop() {
 void PrintHEX( unsigned char* str, int start_byte, int end_byte) {
     if (start_byte < 0)
         start_byte = 0;
-    
+
     for (int i = start_byte; i < end_byte; ++i) {
         printf("%.2X ", str[i]);
       if (i+1 %PRNT ==0)
-         printf("\n");    
+         printf("\n");
     }
     printf("\n");
 }
