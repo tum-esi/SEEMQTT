@@ -16,6 +16,7 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/entropy_poll.h"
 #include "mbedtls/aes.h"
+#include "mbedtls/gcm.h"
 #include "pbc.h"
 #include "secconfig.h"
 #include "shamirsecretshare.h"
@@ -124,6 +125,8 @@ class SecMqtt: public PubSubClient {
     SecMqtt(Client& client);
     int aes_encryption(const unsigned char* input, size_t input_len, const unsigned char* key, unsigned char* iv, unsigned char* output);
     int aes_decryption(const unsigned char* input, size_t input_len, const unsigned char* key, unsigned char* iv, unsigned char* output);
+    int aes_gcm_encryption(const unsigned char* input, size_t input_len, const unsigned char* key, unsigned char* iv, unsigned char* output, const unsigned char* add, size_t add_len, unsigned char* tag, size_t tag_len);
+    int aes_gcm_decryption(const unsigned char* input, size_t input_len, const unsigned char* key, unsigned char* iv, unsigned char* output, const unsigned char* add, size_t add_len, unsigned char* tag, size_t tag_len);
     static int myrand(void *rng_state, unsigned char *output, size_t len);
     int ibe_encryption(int ks_id, unsigned char *plaintext, size_t plaintext_len , unsigned char *cipher, unsigned char *Uc);
     void rsa_sign(const unsigned char * input, size_t P_SIZE, unsigned char * sign);

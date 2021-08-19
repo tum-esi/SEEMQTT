@@ -231,15 +231,25 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     #endif
 
     unsigned char *Eskmsg = (unsigned char *) malloc(msg_len);
-    unsigned char iv[BLOCK_SIZE];
+    unsigned char iv[BLOCK_SIZE], iv_tmp[BLOCK_SIZE];
     esp_fill_random(iv, BLOCK_SIZE);
+    memcpy(iv_tmp, iv, BLOCK_SIZE);
 
-    aes_encryption(msg, msg_len, this->_session_key, iv, Eskmsg);
+    const char *auth_msg = "TUM IoT Security";
+    const char *auth_msg_fake = "TUM IoT Hacker";
+    unsigned char tag[BLOCK_SIZE];
+    size_t tag_len = BLOCK_SIZE;
+
+    aes_gcm_encryption(msg, msg_len, this->_session_key, iv_tmp, Eskmsg, (const unsigned char*)auth_msg, (size_t)strlen(auth_msg), tag, tag_len);
     #ifdef DBG_MSG
+    Serial.print("plantext user message: ");
+    PrintHEX((unsigned char*)msg, msg_len);
     Serial.print("Encrypted user message: ");
     PrintHEX(Eskmsg, msg_len);
     #endif
 
+    // TODO
+    // add tag and tag_len to the Eskmsg
     beginPublish(topic,  msg_len, true);
     write((byte*)Eskmsg, msg_len);
     endPublish();
@@ -253,6 +263,14 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
 
     #ifdef TIME_MSG
     Serial.printf("time publish message: %lu (us)\n", t_e - t_b);
+    #endif
+
+    #ifdef DBG_MSG
+    unsigned char outmsg[msg_len];
+    aes_gcm_decryption(Eskmsg, msg_len, this->_session_key, iv_tmp, outmsg, (const unsigned char*)auth_msg_fake, (size_t)strlen(auth_msg_fake),
+            tag, tag_len);
+    Serial.printf("Decrypted user message: ");
+    PrintHEX(outmsg, msg_len);
     #endif
 
     free(Eskmsg);
@@ -687,6 +705,55 @@ int SecMqtt::aes_decryption(const unsigned char* input, size_t input_len, const 
     return rc;
 }
 
+int SecMqtt::aes_gcm_encryption(const unsigned char* input, size_t input_len, const unsigned char* key, 
+        unsigned char* iv, unsigned char* output, const unsigned char* add, size_t add_len, unsigned char* tag, size_t tag_len) {
+
+    int rc = 0;
+    size_t iv_len = BLOCK_SIZE;
+    unsigned int keybits = BLOCK_SIZE * 8;
+
+    mbedtls_gcm_context aes;
+    mbedtls_gcm_init(&aes);
+    mbedtls_gcm_setkey(&aes, MBEDTLS_CIPHER_ID_AES, key, keybits);
+
+    rc = mbedtls_gcm_crypt_and_tag(&aes, MBEDTLS_GCM_ENCRYPT, input_len, iv, iv_len, add, add_len, input, output, tag_len, tag);
+    if (rc != 0) {
+        Serial.printf("failed \n ! mbedtls_gcm_crypt_and_tag returned %d\n", rc);
+        return -1;
+    }
+
+    mbedtls_gcm_free(&aes);
+
+    Serial.printf(">>>>>>>>>>>>>>>>>> aes gcm encryption successful!\n");
+    return 0;
+}
+
+int SecMqtt::aes_gcm_decryption(const unsigned char* input, size_t input_len, const unsigned char* key, 
+        unsigned char* iv, unsigned char* output, const unsigned char* add, size_t add_len, unsigned char* tag, size_t tag_len) {
+
+    int rc = 0;
+    size_t iv_len = BLOCK_SIZE;
+    unsigned int keybits = BLOCK_SIZE * 8;
+
+    mbedtls_gcm_context aes;
+    mbedtls_gcm_init(&aes);
+    mbedtls_gcm_setkey(&aes, MBEDTLS_CIPHER_ID_AES, key, keybits);
+
+    rc = mbedtls_gcm_auth_decrypt(&aes, input_len, iv, iv_len, add, add_len, tag, tag_len, input, output);
+    if (rc != 0) {
+        if (rc == MBEDTLS_ERR_GCM_AUTH_FAILED) {
+            Serial.printf("failed \n ! mbedtls_gcm_auth_decrypt authentication failed!\n", rc);
+            return -1;
+        }
+        Serial.printf("failed \n ! mbedtls_gcm_auth_decrypt returned %d\n", rc);
+        return -1;
+    }
+
+    mbedtls_gcm_free(&aes);
+    
+    Serial.printf(">>>>>>>>>>>>>>>>>> aes gcm decryption successful!\n");
+    return 0;
+}
 int SecMqtt::get_state() {
     return this->_secmqtt_state;
 }
