@@ -15,10 +15,10 @@
 #define SSS_SIZE 39 // 6 + 2*BLOCK_SIZE + 1
 
 /* Crypto Params */
-#define BLOCK_SIZE 16
+#define BLOCK_SIZE 16 // topic key (128 bits)
 #define C_SIZE 128 // rsa key size (1024 bits)
 #define PK_LEN 273
-#define HASH_LEN 32
+#define HASH_LEN 32 // 256 bits 
 #define ELEMENT_LEN 128
 
 #define TYPEA_PARAMS \

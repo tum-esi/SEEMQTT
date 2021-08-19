@@ -44,9 +44,9 @@ void SecMqtt::SecConnect(const char *client_id) {
 
     } else {
 
-        /** 
+        /**
          *  1. generate a random topic under base topic (MK)
-         *  2. subscribe to acknowledgement topic 
+         *  2. subscribe to acknowledgement topic
          *  3. publish encrypted symmetric key to Key Store
          *  4. check acknowledgement from Key Store
          *  5. OK? publish encrypted session key to Key Store
@@ -77,6 +77,13 @@ void SecMqtt::SecConnect(const char *client_id) {
 
             memcpy(keync[i], ksn_list[i].masterkey, BLOCK_SIZE);
             memcpy(keync[i] + BLOCK_SIZE, ksn_list[i].nonce, BLOCK_SIZE);
+
+            #ifdef DBG_MSG
+            Serial.println("KS[%d]. masterkey: ");
+            PrintHEX (ksn_list[i].masterkey, BLOCK_SIZE);
+            Serial.println("KS[%d]. nonce: ");
+            PrintHEX (ksn_list[i].nonce, BLOCK_SIZE);
+            #endif
         }
 
         /* create key store connection topic */
@@ -86,7 +93,7 @@ void SecMqtt::SecConnect(const char *client_id) {
         strcpy(this->_ack_topic, String((String(this->_base_topic) + "/" + random_topic + "/" + "ack")).c_str());
         strcpy(this->_sk_topic, String((String(this->_base_topic) + "/" + random_topic + "/" + "sk")).c_str());
         //strcpy(this->_sk_ack_topic, String((String(this->_base_topic) + "/" + random_topic + "/" + "skack")).c_str());
-        
+
         using namespace std::placeholders;
         auto callback = std::bind(&SecMqtt::SecCallback, this, _1, _2, _3);
         setCallback(callback);
@@ -179,7 +186,7 @@ void SecMqtt::SecConnect(const char *client_id) {
 
             loop();
         }
-     
+
         #ifdef DBG_MSG
         Serial.println("End Phase 1 successfully!");
         #endif
@@ -189,7 +196,7 @@ void SecMqtt::SecConnect(const char *client_id) {
     }
 
     SecSessionKeyUpdate();
-    
+
     return ;
 }
 
@@ -197,7 +204,7 @@ void SecMqtt::SecConnect(const char *client_id) {
 // aes gcm mode
 
 void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg_len) {
- 
+
     /**
      * Phase 3: Publish message encrypted using session key (Esk(msg))
      */
@@ -231,7 +238,7 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     #ifdef DBG_MSG
     Serial.print("Encrypted user message: ");
     PrintHEX(Eskmsg, msg_len);
-    #endif    
+    #endif
 
     beginPublish(topic,  msg_len, true);
     write((byte*)Eskmsg, msg_len);
@@ -252,17 +259,17 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
 }
 
 void SecMqtt::SecSessionKeyUpdate() {
-        
+
     /**
      * Send the shares genrated based on the message key to Keystores
-     * 
+     *
      *
            ***********************
-           *                |    |  
+           *                |    |
            *  En(sk, hc, ht)| iv |
            *                |    |
            * *********************
-    */ 
+    */
     unsigned long t_b = micros();
 
     #ifdef DBG_MSG
@@ -315,7 +322,7 @@ void SecMqtt::SecSessionKeyUpdate() {
             unsigned char msg_enc[BLOCK_SIZE + 2*HASH_LEN];
             size_t m_len = BLOCK_SIZE + 2*HASH_LEN + BLOCK_SIZE;
             unsigned char buffer[m_len];
-        
+
             esp_fill_random(iv, BLOCK_SIZE);
             memcpy(iv_tmp, iv, BLOCK_SIZE);
 
@@ -334,7 +341,7 @@ void SecMqtt::SecSessionKeyUpdate() {
                 Serial.println("succeed to encrypt session key!");
                 #endif
             }
-            
+
             memcpy(buffer, msg_enc, BLOCK_SIZE + 2*HASH_LEN);
             memcpy(buffer + BLOCK_SIZE + 2*HASH_LEN, iv, BLOCK_SIZE);
 
@@ -356,14 +363,16 @@ void SecMqtt::SecSessionKeyUpdate() {
 
             #ifdef DBG_MSG
             Serial.printf("sss shares: %d\n", i);
-            Serial.printf("%.*s\n", SSS_SIZE, this->_shares_sss[i]); 
+            Serial.printf("%.*s\n", SSS_SIZE, this->_shares_sss[i]);
             #endif
 
-            /* msg has to be multiple of 16 bytes aes cbc mode 
+            /* msg has to be multiple of 16 bytes aes cbc mode
              * we add 09 as padding
              * */
-            unsigned char msg[SSS_SIZE + 2*HASH_LEN + 9]; 
-            unsigned char msg_enc[3*BLOCK_SIZE + 2*HASH_LEN];
+            int padding = 16  - (SSS_SIZE + 2*HASH_LEN)%16;
+            int msglen = SSS_SIZE + 2*HASH_LEN + padding;
+            unsigned char msg[msglen];
+            unsigned char msg_enc[msglen];
             size_t m_len = 3*BLOCK_SIZE + 2*HASH_LEN + BLOCK_SIZE;
             unsigned char *buffer = (unsigned char *)malloc(m_len);
 
@@ -373,7 +382,7 @@ void SecMqtt::SecSessionKeyUpdate() {
             memcpy(msg, this->_shares_sss[i], SSS_SIZE);
             memcpy(msg + SSS_SIZE, this->_iot_pk_key_hash, HASH_LEN);
             memcpy(msg + SSS_SIZE + HASH_LEN, this->_iot_data_hash, HASH_LEN);
-            memset(msg + SSS_SIZE + 2*HASH_LEN, 0x09, 9);
+            memset(msg + SSS_SIZE + 2*HASH_LEN, padding, padding);
 
             time_info.t_s = micros();
             rc = aes_encryption(msg, SSS_SIZE + 2*HASH_LEN + 9, ksn_list[i].masterkey, iv_tmp, msg_enc);
@@ -389,12 +398,14 @@ void SecMqtt::SecSessionKeyUpdate() {
 
             memcpy(buffer, msg_enc, 3*BLOCK_SIZE + 2*HASH_LEN);
             memcpy(buffer + 3*BLOCK_SIZE + 2*HASH_LEN, iv, BLOCK_SIZE);
-            
+
             sprintf(ksn_list[i].sk_topic, "%s/%d", this->_sk_topic, i + 1);
 
             #ifdef DBG_MSG
             Serial.print("publish key shares to KeyStores under sk topic: ");
             Serial.println(ksn_list[i].sk_topic);
+            Serial.printf("Share [%d]\n", i );
+            PrintHEX(msg, SSS_SIZE);
             #endif
 
             time_info.t_s = micros();
@@ -479,7 +490,7 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
 
     if(!strcmp(token3, "ack")) {
         /* payload = hash(encrypted nonce + iv) */
-       
+
         int ks_id = atoi(token4) - 1;
 
         time_info.t_recv[ks_id] = micros() - time_info.t_recvs[ks_id];
@@ -488,10 +499,10 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
         unsigned char msg_dec[HASH_LEN];
         unsigned char hpk[HASH_LEN];
         unsigned char iv[BLOCK_SIZE];
-       
+
         memcpy(msg_enc, payload, HASH_LEN);
         memcpy(iv, payload + HASH_LEN, BLOCK_SIZE);
-        
+
         #ifdef DBG_MSG
         Serial.print("Received iv: ");
         PrintHEX(iv, BLOCK_SIZE);
@@ -529,7 +540,7 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
 
                 #ifdef DBG_MSG
                 Serial.println("hpk and nonce are equal\n");
-                #endif                
+                #endif
 
                 if (secmqtt_check_all_ksn_nonce_stat()) {
                     this->_secmqtt_state = SECMQTT_CONNECT_GOOD_NONCE;
@@ -549,7 +560,7 @@ void SecMqtt::secmqtt_key_split() {
     for (int i = 0; i < KSN_NUM - 1; i++) {
         esp_fill_random(this->_shares[i], BLOCK_SIZE);
     }
-   
+
     /* create the KSN_NUMth shares */
     for (int j = 0; j < BLOCK_SIZE; j++) {
         this->_shares[KSN_NUM-1][j] = this->_session_key[j];
@@ -581,25 +592,25 @@ int SecMqtt::myrand(void *rng_state, unsigned char *output, size_t len) {
 
 void SecMqtt::rsa_sign(const unsigned char * input, size_t P_SIZE, unsigned char * sign) {
 
-    mbedtls_pk_context pr; 
+    mbedtls_pk_context pr;
     mbedtls_pk_init(&pr);
     int error_code_pr;
 
     error_code_pr =  mbedtls_pk_parse_key(&pr, this->_iot_pr_key, this->_iot_pr_key_size, NULL, NULL);
     if(error_code_pr != 0) {
         cout << "READING PRIVATE KEY NOT SUCCESSFULL, error code: " << error_code_pr << endl;
-        mbedtls_pk_free(&pr); 
+        mbedtls_pk_free(&pr);
         return ;
     } else {
         /* compute the SHA-256 hash for the input*/
-        unsigned char hash[32]; 
+        unsigned char hash[32];
         int hash_ret;
 
-        hash_ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), input, P_SIZE, hash); 
+        hash_ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), input, P_SIZE, hash);
         if( hash_ret != 0 ) {
             cout << "Calculating HASH not SUCCESSFULL, error code: " << hash_ret << endl;
             mbedtls_pk_free(&pr);
-            return ; 
+            return ;
         } else {
             int sign_ret;
             size_t olen = 0;
@@ -610,7 +621,7 @@ void SecMqtt::rsa_sign(const unsigned char * input, size_t P_SIZE, unsigned char
                 mbedtls_pk_free(&pr);
                 return;
             } else {
-                mbedtls_pk_free(&pr); 
+                mbedtls_pk_free(&pr);
                 return;
             }
         }
@@ -651,7 +662,7 @@ int SecMqtt::aes_encryption(const unsigned char* input, size_t input_len, const 
     mbedtls_aes_setkey_enc( &aes, (const unsigned char*) key, BLOCK_SIZE * 8);
     rc = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, input_len, iv, input, output);
     mbedtls_aes_free( &aes );
-    
+
     return rc;
 }
 
@@ -672,7 +683,7 @@ int SecMqtt::aes_decryption(const unsigned char* input, size_t input_len, const 
 int SecMqtt::get_state() {
     return this->_secmqtt_state;
 }
-    
+
 void SecMqtt::secmqtt_set_cred(const unsigned char* cred) {
     this->_cred = cred;
 }
@@ -762,7 +773,7 @@ int SecMqtt::ibe_encryption(int ks_id, unsigned char *plaintext, \
     element_init_G1(U, ibe_param_pub.pairing);
     element_init_GT(gid, ibe_param_pub.pairing);
     element_init_Zr(r, ibe_param_pub.pairing);
-    
+
     element_random(r);
     element_mul_zn(U, ibe_param_pub.P, r);
     element_pairing(gid, ksn_list[ks_id].Qid, ibe_param_pub.Kpub);
@@ -770,7 +781,7 @@ int SecMqtt::ibe_encryption(int ks_id, unsigned char *plaintext, \
 
     gs = (unsigned char *)malloc(element_length_in_bytes(gid));
     element_to_bytes(gs, gid);
-   
+
     rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (const unsigned char *)gs, element_length_in_bytes(gid), hash);
     if (rc != 0) {
         Serial.println("failed to hash key store gs!");
@@ -779,7 +790,7 @@ int SecMqtt::ibe_encryption(int ks_id, unsigned char *plaintext, \
         Serial.println("successfully hash key store gs!");
         #endif
     }
-    
+
     int j = 0;
     for (int i = 0; i < plaintext_len; i++) {
         if (j >= HASH_LEN) {
