@@ -193,6 +193,9 @@ void SecMqtt::SecConnect(const char *client_id) {
     return ;
 }
 
+// TODO
+// aes gcm mode
+
 void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg_len) {
  
     /**
@@ -635,6 +638,9 @@ void SecMqtt::sym_key_generator(unsigned char* symkey) {
     }
 }
 
+// # TODO
+// cbc to gcm mode!
+
 /* aes encryption cbc */
 int SecMqtt::aes_encryption(const unsigned char* input, size_t input_len, const unsigned char* key, unsigned char* iv, unsigned char* output) {
 
@@ -716,6 +722,25 @@ void SecMqtt::secmqtt_set_enc_mode(char *mode) {
 
         element_from_bytes(ibe_param_pub.Kpub, kpub_t);
         element_from_bytes(ibe_param_pub.P, p_t);
+
+        /* calculate one-time cost Qid */
+        int rc = 0;
+        unsigned char hash[HASH_LEN] = {0};
+
+        for (int i = 0; i < KSN_NUM; i++) {
+            element_init_G1(ksn_list[i].Qid, ibe_param_pub.pairing);
+
+            rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (unsigned char *)ksn_list[i].ibe_id, ksn_list[i].ibe_id_len, hash);
+            if (rc != 0) {
+                Serial.println("failed to hash key store ibe ID!");
+            } else {
+                #ifdef DBG_MSG
+                Serial.println("successfully hash key store ibe ID!");
+                #endif
+            }
+
+            element_from_hash(ksn_list[i].Qid, hash, HASH_LEN);
+        }
     }
 }
 
@@ -731,28 +756,16 @@ int SecMqtt::ibe_encryption(int ks_id, unsigned char *plaintext, \
 
     int rc = 0;
     unsigned char *gs = NULL, hash[HASH_LEN] = {0};
-    element_t r, U, gid, Qid;
+    element_t r, U, gid;
 
     /* Initialize parameters */
-    element_init_G1(Qid, ibe_param_pub.pairing);
     element_init_G1(U, ibe_param_pub.pairing);
     element_init_GT(gid, ibe_param_pub.pairing);
     element_init_Zr(r, ibe_param_pub.pairing);
-
-    rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (unsigned char *)ksn_list[ks_id].ibe_id, ksn_list[ks_id].ibe_id_len, hash);
-    if (rc != 0) {
-        Serial.println("failed to hash key store ibe ID!");
-    } else {
-        #ifdef DBG_MSG
-        Serial.println("successfully hash key store ibe ID!");
-        #endif
-    }
-
-    element_from_hash(Qid, hash, HASH_LEN);
     
     element_random(r);
     element_mul_zn(U, ibe_param_pub.P, r);
-    element_pairing(gid, Qid, ibe_param_pub.Kpub);
+    element_pairing(gid, ksn_list[ks_id].Qid, ibe_param_pub.Kpub);
     element_pow_zn(gid, gid, r);
 
     gs = (unsigned char *)malloc(element_length_in_bytes(gid));
@@ -783,7 +796,6 @@ int SecMqtt::ibe_encryption(int ks_id, unsigned char *plaintext, \
     element_clear(r);
     element_clear(U);
     element_clear(gid);
-    element_clear(Qid);
 
     return Uc_len;
 }
