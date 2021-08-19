@@ -51,7 +51,6 @@ int kn_encode_hex(unsigned char *buf, char **dest, int len)
   *dest = (char *) calloc(2 * len + 1, sizeof(char));
   if (*dest == (char *) NULL)
   {
-    //Serial.println(" Error: kn_encode_hex: calloc\n");
     return -1;
   }
 
@@ -60,15 +59,106 @@ int kn_encode_hex(unsigned char *buf, char **dest, int len)
   return 0;
 }
 
+
+
+
+/*
+ * ASCII-encode a key.
+keytype 1 for public , 2 private
+encoding 1 for Hex , 2 for BASE64
+ */
+char * kn_encode_key(RSA *rsa, int encoding, int keytype)
+{
+
+   	 char *foo, *ptr;
+    	int i;
+
+    	char *s;
+
+
+	if (keytype == 1)
+	  i = i2d_RSAPublicKey(rsa, NULL);
+	else
+	  i = i2d_RSAPrivateKey(rsa, NULL);
+
+	if (i <= 0)
+	{
+	    printf(" Error: i2d_RSAPublicKey \n");
+	    return (char *) NULL;
+	}
+
+	ptr = foo = (char *) calloc(i, sizeof(char));
+	if (foo == (char *) NULL)
+	{
+	    printf(" Error: calloc foo \n");
+	    return (char *) NULL;
+	}
+
+	if (keytype == 1)
+	  i = i2d_RSAPublicKey(rsa, (unsigned char **) &foo);
+	else
+	  i = i2d_RSAPrivateKey(rsa, (unsigned char **) &foo);
+        if (i <= 0)
+	{
+	    printf(" Error: i2d_RSAPublicKey \n");
+	    return (char *) NULL;
+	}
+
+
+	if (encoding == 1)
+	{
+	    if (kn_encode_hex(ptr, &s, i) != 0)
+	    {
+		printf(" Error: kn_encode_hex\n");
+		free(ptr);
+		return (char *) NULL;
+	    }
+
+	    free(ptr);
+
+	printf("  end kn_encode_key \n");
+	    return s;
+	}
+	else
+	  if (encoding == 2)
+	  {
+	      s = (char *) calloc(2 * i, sizeof(char));
+	      if (s == (char *) NULL)
+	      {
+		  printf(" Error: calloc BASE64\n");
+		  free(ptr);
+		  return (char *) NULL;
+	      }
+		/*
+
+	      if (kn_encode_base64(ptr, i, s, 2 * i) == -1)
+	      {
+		  printf(" Error: kn_encode_base64\n");
+		  free(s);
+		  free(ptr);
+		  return (char *) NULL;
+	      }
+	     */
+
+	      free(ptr);
+	      return s;
+	  }
+
+    printf(" Error: end\n");
+    return (char *) NULL;
+}
+
+
+
 char * kn_encode_signture( char *algname ,  char *key)
 {
   int  index = 0 ;
-  char * result = (char *)malloc (364);
-  memset(result, '\0',364);
+  char * result = (char *)malloc (KN_SIGN_SZ);
+  memset(result, '\0',KN_SIGN_SZ);
 
   int length  = 50 ;
-  int i, k;
   int start = 12;
+  int i, k;
 
   for (int j = 0 ; j< start; j++)
   result[index +j]= ' ';
@@ -137,11 +227,8 @@ char *  kn_rsa_sign_md5(const unsigned char * input, int len, const unsigned cha
     mbedtls_pk_free(&pr);
     return NULL ;
   }
-  #ifdef DBG_PRINT
-  //Serial.println( "READING PRIVATE KEY SUCCESSFULL");
-  #endif
 
-  /* compute the SHA1 hash for the input*/
+  /* compute the MD5 hash for the input*/
   mbedtls_md5_init(&shscontext);
   mbedtls_md5_starts(&shscontext);
   mbedtls_md5_update(&shscontext,input, len);
@@ -149,41 +236,32 @@ char *  kn_rsa_sign_md5(const unsigned char * input, int len, const unsigned cha
   int sigalglen = strlen((char *)sigalg);
   mbedtls_md5_update(&shscontext, sigalg, sigalglen);
   mbedtls_md5_finish(&shscontext, hashval);
-  #ifdef DBG_PRINT
-  //Serial.println("MD5 result:");
-  Print(hashval, 0 ,hashlen );
-  #endif
   int sign_ret;
   size_t olen= 0;
   sign_ret = mbedtls_pk_sign(&pr, MBEDTLS_MD_MD5, hashval, hashlen, sign, &olen, kn_myrand, NULL);
   if (sign_ret != 0)
   {
-    #ifdef DBG_PRINT
-    //Serial.println( " Sign not SUCCESSFULL");
-    #endif
     mbedtls_pk_free(&pr);
     return NULL;
-  }
-  else
-  {
-    #ifdef DBG_PRINT
-    //Serial.println( " Sign  SUCCESSFULL");
-    //Serial.println( " Sign :");
-    #endif
   }
   char * finalbuf = (char *)NULL;
   int  i = kn_encode_hex(sign, (char **) &finalbuf, olen);
 
   if (i != 0)
-  return NULL;
+    return NULL;
 
   /* Concatenate algorithm name and signature value */
   char * rebuf = (char *) calloc(sigalglen + strlen(finalbuf) + 1, sizeof(char));
   sprintf(rebuf, "%s%s", sigalg, finalbuf);
-  #ifdef DBG_PRINT
-  //Serial.printf(rebuf);
-  #endif
 
   return rebuf;
   mbedtls_pk_free(&pr);
+}
+
+/*
+Create credential
+*/
+char * GenCredential (const unsigned char * auth_pk,const unsigned char * lic_pk, int keylen,  const unsigned char * condetion, int cond_len , const unsigned char * auth_pr, int prk_len)
+{
+  return NULL ;
 }
