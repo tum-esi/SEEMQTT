@@ -2,11 +2,11 @@
 #define _SECCONFIG_H
 
 /* DEBUG FLAGS  */
-//#define DBG_MSG
+#define DBG_MSG
 #define TIME_MSG
 
 /* KeyStore */
-#define KSN_NUM 5
+#define KSN_NUM 3
 #define MAX_SK_USAGE 5 // a session key can only be used in MAX_SK_USAGE times communication, then needs to be updated
 
 /* Shamir Secret Sharing Params */
@@ -18,7 +18,7 @@
 #define BLOCK_SIZE 16 // topic key (128 bits)
 #define C_SIZE 128 // rsa key size (1024 bits)
 #define PK_LEN 273
-#define HASH_LEN 32 // 256 bits 
+#define HASH_LEN 32 // 256 bits
 #define ELEMENT_LEN 128
 
 #define TYPEA_PARAMS \

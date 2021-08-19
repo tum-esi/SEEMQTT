@@ -437,8 +437,15 @@ void SecMqtt::SecSessionKeyUpdate() {
 
     /* sign the credential */
     time_info.t_s = micros();
-    rsa_sign((unsigned char *)credential, strlen(credential), signature);
+    //rsa_sign((unsigned char *)credential, strlen(credential), signature);
+    char * result =  kn_rsa_sign_md5((unsigned char *)credential,strlen(credential),  this->_iot_pr_key, this->_iot_pr_key_size, signature);
+    char * kn_sign = kn_encode_signture("",result) ;
     time_info.t_cred_sign = micros() - time_info.t_s;
+
+    #ifdef DBG_MSG
+    Serial.println("signed credential: ");
+    Serial.println(kn_sign );
+    #endif
 
     int cr_len = siglength + strlen(credential);
     unsigned char cr_buffer[cr_len];

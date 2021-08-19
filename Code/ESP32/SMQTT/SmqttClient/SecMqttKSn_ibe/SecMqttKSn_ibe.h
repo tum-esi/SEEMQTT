@@ -19,6 +19,7 @@
 #include "pbc.h"
 #include "secconfig.h"
 #include "shamirsecretshare.h"
+#include "KeynoteESP.h"
 
 using namespace std;
 
@@ -117,7 +118,7 @@ class SecMqtt: public PubSubClient {
     ks_tuples_t ksn_list[KSN_NUM];
     ibe_sys_param_pub_t ibe_param_pub;
     ibe_sys_param_private_t ibe_param_pri;
-    
+
   public:
     SecMqtt();
     SecMqtt(Client& client);
