@@ -37,6 +37,48 @@ static int kn_myrand(void *rng_state, unsigned char *output, size_t len)
 }
 
 /*
+* Create a credential.
+* Input: authorizer public key, Licensee public key, public key lenght, conditions,condition string lengh  and authorizer private key
+* both public key Should follow the keynote ecoding
+*/
+
+void  kn_GenCredential (const unsigned char * cre, int cr_len , const unsigned char * auth_pr, int prk_len,  unsigned char ** sig_cre,  int * relen)
+{
+  //printf("******* here***\n" );
+  //printf("input: auth_pr=  %s\n", auth_pr);
+  //printf("input: auth_pr_len=  %s\n", prk_len);
+  //printf("input: cre = %s\n", cre);
+  //printf("input: len = %d\n", cr_len);
+  //printf("input: result len=  %s\n", *relen);
+  unsigned char signature[128]={0};
+  //int tmprlen = 888;
+  char * result =  kn_rsa_sign_md5(cre,cr_len,  auth_pr, prk_len, signature);
+  if (result == NULL )
+  {
+    printf("Error on kn_rsa_sign_md5\n");
+    return ;
+  }
+  char * kn_sign = kn_encode_signture("",result) ; //  the lengh of kn_sig = KN_SIGN_SZ
+  if (kn_sign == NULL )
+  {
+    printf("Error on kn_sign\n");
+    return;
+  }
+  //*relen = KN_SIGN_SZ + cr_len ;
+  *relen =  cr_len + strlen(kn_sign) ;
+  unsigned char * outconme = (unsigned char *) malloc(*relen) ;
+  if (outconme == NULL)
+  {
+    printf("Error on malloc\n");
+    return;
+  }
+  memset(outconme, '0', *relen);
+  //printf("*******relen = %d***\n", *relen );
+  sprintf(outconme,"%s%s",cre,kn_sign );
+  //printf("%s\n",outconme );
+  *sig_cre = outconme ;
+}
+/*
 * Encode a binary string with hex encoding. Return 0 on success.
 */
 int kn_encode_hex(unsigned char *buf, char **dest, int len)
@@ -60,96 +102,10 @@ int kn_encode_hex(unsigned char *buf, char **dest, int len)
 }
 
 
-
-
 /*
- * ASCII-encode a key.
-keytype 1 for public , 2 private
-encoding 1 for Hex , 2 for BASE64
- */
-char * kn_encode_key(RSA *rsa, int encoding, int keytype)
-{
-
-   	 char *foo, *ptr;
-    	int i;
-
-    	char *s;
-
-
-	if (keytype == 1)
-	  i = i2d_RSAPublicKey(rsa, NULL);
-	else
-	  i = i2d_RSAPrivateKey(rsa, NULL);
-
-	if (i <= 0)
-	{
-	    printf(" Error: i2d_RSAPublicKey \n");
-	    return (char *) NULL;
-	}
-
-	ptr = foo = (char *) calloc(i, sizeof(char));
-	if (foo == (char *) NULL)
-	{
-	    printf(" Error: calloc foo \n");
-	    return (char *) NULL;
-	}
-
-	if (keytype == 1)
-	  i = i2d_RSAPublicKey(rsa, (unsigned char **) &foo);
-	else
-	  i = i2d_RSAPrivateKey(rsa, (unsigned char **) &foo);
-        if (i <= 0)
-	{
-	    printf(" Error: i2d_RSAPublicKey \n");
-	    return (char *) NULL;
-	}
-
-
-	if (encoding == 1)
-	{
-	    if (kn_encode_hex(ptr, &s, i) != 0)
-	    {
-		printf(" Error: kn_encode_hex\n");
-		free(ptr);
-		return (char *) NULL;
-	    }
-
-	    free(ptr);
-
-	printf("  end kn_encode_key \n");
-	    return s;
-	}
-	else
-	  if (encoding == 2)
-	  {
-	      s = (char *) calloc(2 * i, sizeof(char));
-	      if (s == (char *) NULL)
-	      {
-		  printf(" Error: calloc BASE64\n");
-		  free(ptr);
-		  return (char *) NULL;
-	      }
-		/*
-
-	      if (kn_encode_base64(ptr, i, s, 2 * i) == -1)
-	      {
-		  printf(" Error: kn_encode_base64\n");
-		  free(s);
-		  free(ptr);
-		  return (char *) NULL;
-	      }
-	     */
-
-	      free(ptr);
-	      return s;
-	  }
-
-    printf(" Error: end\n");
-    return (char *) NULL;
-}
-
-
-
+* Encode the signature
+* the length of the result is KN_SIGN_SZ
+*/
 char * kn_encode_signture( char *algname ,  char *key)
 {
   int  index = 0 ;
@@ -204,6 +160,9 @@ char * kn_encode_signture( char *algname ,  char *key)
   return result;
 }
 
+/*
+* sign the credential
+*/
 char *  kn_rsa_sign_md5(const unsigned char * input, int len, const unsigned char * iot_pr_key, int keylen,   unsigned char * sign)
 {
   mbedtls_pk_context  pr;
@@ -256,12 +215,4 @@ char *  kn_rsa_sign_md5(const unsigned char * input, int len, const unsigned cha
 
   return rebuf;
   mbedtls_pk_free(&pr);
-}
-
-/*
-Create credential
-*/
-char * GenCredential (const unsigned char * auth_pk,const unsigned char * lic_pk, int keylen,  const unsigned char * condetion, int cond_len , const unsigned char * auth_pr, int prk_len)
-{
-  return NULL ;
 }

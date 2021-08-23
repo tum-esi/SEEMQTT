@@ -72,6 +72,39 @@ const unsigned char iot_pr_key[]= \
 "-----END RSA PRIVATE KEY-----\n";
 
 
+unsigned char iotpk[] = "KeyNote-Version: 2\nAuthorizer: \"rsa-hex:30818902818100c5465a29ab554d22b5eac414a0\\\n" \
+"            4e75c5e37690c2759e7bba9c33596d5010bd8e5c8be2c1b59\\\n" \
+"            c939152ce952beb6ca678878c0a0735216e76c00b9ef1fb43\\\n" \
+"            434eeebdd4f1b195109cde01e6e24e23cd49ea66fe8dd30e4\\\n" \
+"            ac18ba4ca411229a7d1bc473d072bfd602f0b9bed74e255b8\\\n" \
+"            9c374e8f3a3dc0de1bc7b49ff9708f4a470203010001\"\n" ;
+unsigned char capk[]  = "Licensees:  \"rsa-hex:30818902818100ca4487e0d985cf784c60dd1b06\\\n" \
+"            88f37d6f87fb8ced72a44f64c18e732a4a3b31dedb80df96f\\\n" \
+"            2e341fd4fbeed89e86bdd87c8982a6cbeb80e6f433f1a8e89\\\n" \
+"            e8f285ef8c4f5271aa9512635c2cc3bd37d758fcdf47aeb85\\\n" \
+"            8a89cb0e6597de08665dd82300a20fd8e7e8b529eeadebc88\\\n" \
+"            0a885761d12f8dcf03c54cf95ea67418050203010001\"\n Delegate: 0\n" ;
+unsigned char Conditions[] ="topic == \"t1\" && location == \"l1\" -> \"authorized\";\n Signature: " ;
+
+
+const unsigned char cr[] = \
+"KeyNote-Version: 2\n"\
+"Authorizer: \"rsa-hex:30818902818100c5465a29ab554d22b5eac414a0\\\n" \
+"            4e75c5e37690c2759e7bba9c33596d5010bd8e5c8be2c1b59\\\n" \
+"            c939152ce952beb6ca678878c0a0735216e76c00b9ef1fb43\\\n" \
+"            434eeebdd4f1b195109cde01e6e24e23cd49ea66fe8dd30e4\\\n" \
+"            ac18ba4ca411229a7d1bc473d072bfd602f0b9bed74e255b8\\\n" \
+"            9c374e8f3a3dc0de1bc7b49ff9708f4a470203010001\"\n" \
+"Licensees:  \"rsa-hex:30818902818100ca4487e0d985cf784c60dd1b06\\\n" \
+"            88f37d6f87fb8ced72a44f64c18e732a4a3b31dedb80df96f\\\n" \
+"            2e341fd4fbeed89e86bdd87c8982a6cbeb80e6f433f1a8e89\\\n" \
+"            e8f285ef8c4f5271aa9512635c2cc3bd37d758fcdf47aeb85\\\n" \
+"            8a89cb0e6597de08665dd82300a20fd8e7e8b529eeadebc88\\\n" \
+"            0a885761d12f8dcf03c54cf95ea67418050203010001\"\n" \
+"Delegate: 1\n"\
+"Conditions: topic == \"t1\" && location == \"l1\" -> \"authorized\";\n"\
+"Signature: ";
+
 WiFiClient espClient;
 SecMqtt mqttclient(espClient);
 
@@ -208,6 +241,9 @@ void setup() {
  // mqttclient.secmqtt_set_ibe_id(ks_ibe_id5, strlen(ks_ibe_id5),5);
   mqttclient.secmqtt_set_enc_mode("ibe");
   mqttclient.secmqtt_set_secret_share_mode("sss");
+
+  mqttclient.secmqtt_set_iot_credential(cr, (int) sizeof(cr)); 
+
 
   /* 
    * 1. connection to Key Store will be done only once during setup 

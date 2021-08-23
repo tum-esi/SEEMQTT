@@ -22,6 +22,8 @@ SecMqtt::SecMqtt(Client& client) : PubSubClient(client) {
     this->_iot_pk_key_size = 0;
     this->_iot_pr_key = NULL;
     this->_iot_pr_key_size = 0;
+    this->_iot_credntial = NULL ;
+    this->_iot_credntial_size =0 ;
     this->_sk_counter = 0;
     this->_ibe_mode = false;
     this->_sss_mode = false;
@@ -674,8 +676,7 @@ void SecMqtt::sym_key_generator(unsigned char* symkey) {
     }
 }
 
-// # TODO
-// cbc to gcm mode!
+
 
 /* aes encryption cbc */
 int SecMqtt::aes_encryption(const unsigned char* input, size_t input_len, const unsigned char* key, unsigned char* iv, unsigned char* output) {
@@ -705,7 +706,7 @@ int SecMqtt::aes_decryption(const unsigned char* input, size_t input_len, const 
     return rc;
 }
 
-int SecMqtt::aes_gcm_encryption(const unsigned char* input, size_t input_len, const unsigned char* key, 
+int SecMqtt::aes_gcm_encryption(const unsigned char* input, size_t input_len, const unsigned char* key,
         unsigned char* iv, unsigned char* output, const unsigned char* add, size_t add_len, unsigned char* tag, size_t tag_len) {
 
     int rc = 0;
@@ -728,7 +729,7 @@ int SecMqtt::aes_gcm_encryption(const unsigned char* input, size_t input_len, co
     return 0;
 }
 
-int SecMqtt::aes_gcm_decryption(const unsigned char* input, size_t input_len, const unsigned char* key, 
+int SecMqtt::aes_gcm_decryption(const unsigned char* input, size_t input_len, const unsigned char* key,
         unsigned char* iv, unsigned char* output, const unsigned char* add, size_t add_len, unsigned char* tag, size_t tag_len) {
 
     int rc = 0;
@@ -750,7 +751,7 @@ int SecMqtt::aes_gcm_decryption(const unsigned char* input, size_t input_len, co
     }
 
     mbedtls_gcm_free(&aes);
-    
+
     Serial.printf(">>>>>>>>>>>>>>>>>> aes gcm decryption successful!\n");
     return 0;
 }
@@ -779,8 +780,29 @@ void SecMqtt::secmqtt_set_iot_pk_key(const unsigned char* key, int key_size) {
 }
 
 void SecMqtt::secmqtt_set_iot_pr_key(const unsigned char* key, int key_size) {
+
     this->_iot_pr_key = key;
     this->_iot_pr_key_size = key_size;
+}
+
+void SecMqtt::secmqtt_set_iot_credential(const unsigned char* cre, int cre_size) {
+  #ifdef DBG_MSG
+  Serial.println("*************************************");
+  Serial.println("*  Setting up the credentila  *");
+  Serial.println("*************************************");
+  Serial.printf("this->_iot_pr_key_size = %d \n",  this->_iot_pr_key_size );
+  #endif
+    unsigned char * resu_cre ;
+    int r_len = 0;
+    kn_GenCredential(cre,cre_size, this->_iot_pr_key, this->_iot_pr_key_size, &resu_cre, &r_len);
+    this->_iot_credntial = resu_cre;
+    this->_iot_credntial_size = r_len;
+    #ifdef DBG_MSG
+    Serial.printf(" credential lenght = %d\n",this->_iot_credntial_size );
+    Serial.println("*************************************");
+    Serial.printf(" credential lenght = %s\n",this->_iot_credntial );
+    Serial.println("*************************************");
+    #endif
 }
 
 bool SecMqtt::secmqtt_check_all_ksn_nonce_stat() {

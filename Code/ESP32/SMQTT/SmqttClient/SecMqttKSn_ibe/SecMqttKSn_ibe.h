@@ -95,8 +95,11 @@ class SecMqtt: public PubSubClient {
   protected:
     const unsigned char* _iot_pk_key;
     const unsigned char* _iot_pr_key;
+    unsigned char * _iot_credntial;
+
     int _iot_pk_key_size;
     int _iot_pr_key_size;
+    int _iot_credntial_size;
     const unsigned char* _cred;
     unsigned char _ks_sym_key[BLOCK_SIZE];
     unsigned char _session_key[BLOCK_SIZE];
@@ -138,6 +141,7 @@ class SecMqtt: public PubSubClient {
     void secmqtt_set_cred(const unsigned char* cred);
     void secmqtt_set_iot_pk_key(const unsigned char* key, int key_size);
     void secmqtt_set_iot_pr_key(const unsigned char* key, int key_size);
+    void secmqtt_set_iot_credential(const unsigned char* cre, int cre_size);
     void secmqtt_key_split();
     void secmqtt_sss_split();
     void secmqtt_set_enc_mode(char *mode);
