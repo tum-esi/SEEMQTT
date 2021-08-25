@@ -441,6 +441,7 @@ void SecMqtt::SecSessionKeyUpdate() {
     unsigned long t_e = micros();
 
     /* transmit the credential */
+    /*
     int siglength = 128;
     int maxlen = 2048;
 
@@ -455,7 +456,7 @@ void SecMqtt::SecSessionKeyUpdate() {
 
     unsigned char signature[siglength];
 
-    /* sign the credential */
+    //sign the credential
     time_info.t_s = micros();
     //rsa_sign((unsigned char *)credential, strlen(credential), signature);
     char * result =  kn_rsa_sign_md5((unsigned char *)credential,strlen(credential),  this->_iot_pr_key, this->_iot_pr_key_size, signature);
@@ -468,15 +469,21 @@ void SecMqtt::SecSessionKeyUpdate() {
     #endif
 
     int cr_len = siglength + strlen(credential);
+
     unsigned char cr_buffer[cr_len];
 
     memcpy(cr_buffer, signature, siglength);
     memcpy(cr_buffer + siglength, credential, strlen(credential));
+    */
+    int cr_len = this->_iot_credntial_size;
+    unsigned char cr_buffer[cr_len];
+    memcpy(cr_buffer, this->_iot_credntial, cr_len);
 
     beginPublish(CR,  cr_len, false);
     write((byte*)cr_buffer, cr_len);
     endPublish();
 
+    /*
     #ifdef DBG_MSG
     Serial.println("signed credential: ");
     PrintHEX(cr_buffer, cr_len);
@@ -484,8 +491,12 @@ void SecMqtt::SecSessionKeyUpdate() {
 
     free(credential);
 
-    unsigned long t_ee = micros();
+    */
 
+    #ifdef DBG_MSG
+    Serial.printf(" signed credential: %s\n",cr_buffer );
+    #endif
+    unsigned long t_ee = micros();
     time_info.t_cred = t_ee - t_e;
     time_info.t_p3 = t_e - t_b;
 
@@ -493,7 +504,7 @@ void SecMqtt::SecSessionKeyUpdate() {
     Serial.printf("time key split: \t%lu (us)\n", time_info.t_keysplit);
     Serial.printf("time key enc: \t\t%lu (us)\n", time_info.t_p3enc);
     Serial.printf("time key send: \t\t%lu (us)\n", time_info.t_p3send);
-    Serial.printf("time sign cred: \t%lu (us)\n", time_info.t_cred_sign);
+    //Serial.printf("time sign cred: \t%lu (us)\n", time_info.t_cred_sign);
     Serial.printf("time cred: \t\t%lu (us)\n", time_info.t_cred);
     Serial.printf("time phase 3: \t\t%lu (us)\n", time_info.t_p3);
     Serial.printf("time phase 3 + cred: \t%lu (us)\n", time_info.t_p3 + time_info.t_cred);
@@ -725,7 +736,9 @@ int SecMqtt::aes_gcm_encryption(const unsigned char* input, size_t input_len, co
 
     mbedtls_gcm_free(&aes);
 
-    Serial.printf(">>>>>>>>>>>>>>>>>> aes gcm encryption successful!\n");
+    #ifdef DBG_MSG
+    Serial.println(" AES-GCM encryption was  perfromed successfulyl!  ");
+    #endif
     return 0;
 }
 
@@ -751,8 +764,9 @@ int SecMqtt::aes_gcm_decryption(const unsigned char* input, size_t input_len, co
     }
 
     mbedtls_gcm_free(&aes);
-
-    Serial.printf(">>>>>>>>>>>>>>>>>> aes gcm decryption successful!\n");
+    #ifdef DBG_MSG
+    Serial.println(" AES-GCM decryption  was  perfromed successfulyl!  ");
+    #endif
     return 0;
 }
 int SecMqtt::get_state() {
@@ -787,10 +801,7 @@ void SecMqtt::secmqtt_set_iot_pr_key(const unsigned char* key, int key_size) {
 
 void SecMqtt::secmqtt_set_iot_credential(const unsigned char* cre, int cre_size) {
   #ifdef DBG_MSG
-  Serial.println("*************************************");
   Serial.println("*  Setting up the credentila  *");
-  Serial.println("*************************************");
-  Serial.printf("this->_iot_pr_key_size = %d \n",  this->_iot_pr_key_size );
   #endif
     unsigned char * resu_cre ;
     int r_len = 0;
@@ -798,11 +809,9 @@ void SecMqtt::secmqtt_set_iot_credential(const unsigned char* cre, int cre_size)
     this->_iot_credntial = resu_cre;
     this->_iot_credntial_size = r_len;
     #ifdef DBG_MSG
-    Serial.printf(" credential lenght = %d\n",this->_iot_credntial_size );
-    Serial.println("*************************************");
-    Serial.printf(" credential lenght = %s\n",this->_iot_credntial );
-    Serial.println("*************************************");
+    Serial.println(" The credential was generated.*");
     #endif
+
 }
 
 bool SecMqtt::secmqtt_check_all_ksn_nonce_stat() {
