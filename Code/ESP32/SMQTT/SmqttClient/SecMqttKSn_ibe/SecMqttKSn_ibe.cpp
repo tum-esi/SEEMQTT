@@ -74,9 +74,12 @@ void SecMqtt::SecConnect(const char *client_id) {
         time_info.t_p11s = micros();
 
         for (int i = 0; i < KSN_NUM; i++) {
+            /* generate the symertic master key*/
             sym_key_generator(ksn_list[i].masterkey);
+            /*generate nonce */
             esp_fill_random(ksn_list[i].nonce, BLOCK_SIZE);
 
+            /* keyen = symK || nonce */
             memcpy(keync[i], ksn_list[i].masterkey, BLOCK_SIZE);
             memcpy(keync[i] + BLOCK_SIZE, ksn_list[i].nonce, BLOCK_SIZE);
 
@@ -117,7 +120,7 @@ void SecMqtt::SecConnect(const char *client_id) {
          *      key store 1 ack topic: MK/ClientID-xxxx/ack/1
          *      key store 2 ack topic: MK/ClientID-xxxx/ack/2
          *      ...
-         * - publish Enc(msrKpubc-ksi||nci, pk_ksi)||iot_pk_key to key store value topic
+         * - publish Enc(symKPub-ksi||nci, pk_ksi)||iot_pk_key to key store value topic
          * - subscribe to key store acknowledge topic
          */
         for (int i = 0; i < KSN_NUM; i++) {
@@ -309,13 +312,13 @@ void SecMqtt::SecSessionKeyUpdate() {
     Serial.print("Session Key: ");
     PrintHEX(this->_session_key, BLOCK_SIZE);
     #endif
-
+    /* secret splitting */
     if (this->_ksn_mode) {
         time_info.t_s = micros();
         secmqtt_key_split();
         time_info.t_keysplit = micros() - time_info.t_s;
     }
-
+      /* Shamir Secret Sharing*/
     if (this->_sss_mode) {
         time_info.t_s = micros();
         secmqtt_sss_split();
