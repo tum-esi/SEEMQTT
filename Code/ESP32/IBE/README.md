@@ -1,10 +1,9 @@
 # Identity Based Encryption (IBE) for ESP32
 IBE folder 
 
-- ibe_esp32: This folder contains two sub project 
-  - ibe_ESP32: to test all the IBE process locally 
-  - ibe_mqtt: to connect with mqtt broker and receive the IBE public parameters. 
+- ibe_esp32: This folder contains
+  - ibe_ESP32:  which is used to test all the IBE operation locally. ESP32 will be used as PKG to  perform setup and extract operation. Also, it will be used to perform Encryption and Decryption. 
+  - esp32_crosscompile: which contains precompiled GMP and PBC libraries. These libraries are required to run IBE test on ESP32. 
 - ibe_linux: this folder contains:
-  - **bonehfranklin.c**:  the IBE implementation. (where I can find the input parameters?)
-  - **ibemqtt**: 
-  - **ibemqttsub**: 
+  - **bonehfranklin.c**:  the Boneh and Franklin implementation of IBE.  
+
