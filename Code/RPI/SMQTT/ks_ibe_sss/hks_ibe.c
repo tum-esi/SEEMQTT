@@ -21,10 +21,18 @@
 #include <openssl/sha.h>
 
 static bool run = true;
-bool ibe_mode = false;
-bool rsa_mode = false;
-bool ksn_mode = false;
-bool sss_mode = false;
+// KEy Sippliting (KSN), Shamir's Secret Sharing (SSS)
+enum SHARING_MODE {KSN, SSS}; 
+// Public Key Encryption (PKE) (using rsa), Identoty Based Encryption (IBE)
+enum ENC_MODE {PKE, IBE}; 
+
+enum SHARING_MODE sharing_mode; 
+enum ENC_MODE enc_mode ; 
+
+//bool ibe_mode = false;
+//bool rsa_mode = false;
+//bool ksn_mode = false;
+//bool sss_mode = false;
 bool FLAG_ONCE = true;
 bool FLAG_ACK_TOPIC = false;
 
@@ -34,7 +42,7 @@ bool FLAG_ACK_TOPIC = false;
 
 int id ; 
 
-const char* mqttServer =  "192.168.178.38";
+const char* mqttServer =  "192.168.0.110";
 const int mqttPort = 1883;
 const char* base_topic = "MK/";
 const char* mqttConnTopic = "MK/#";
@@ -51,18 +59,6 @@ unsigned char ks_symm_key[BLOCK_SIZE];
 unsigned char ks_pr_key[1024]; 
 unsigned char Didc[ELEMENT_LEN];
 
-/*
- * IOT Keys
- */
-/*
-const unsigned char iot_pk_key[]= \
-"-----BEGIN PUBLIC KEY-----\n" \
-"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDKjz7exzoJeYecrXXm1D2QP09F\n" \
-"S8GS6hwVfQDmAaQIRt8sfDzGdEWIA7MRp2sr8wBKqboU1qLKscBu4tm39KJ74+MA\n" \
-"xtWX/V/Hr+TXvBM2jP5sezl8sMzYPSnlF57szlJOadPUlwoWhA43sH/7A1vGQmiC\n" \
-"YqYjK+Nu5G9SwSye4QIDAQAB\n" \
-"-----END PUBLIC KEY-----\n";
-*/
 
 unsigned char *iv = (unsigned char*)"012345678912345";
 /*
@@ -78,7 +74,7 @@ void readprivk(char * path)
      #ifdef CRYP_DBG
      printf(" len = %d\n", len); 
      #endif
-  }
+    }
     fp = fopen(path, "r");
     if (fp == NULL){
         printf("Could not open file %s",path);
@@ -91,43 +87,43 @@ void readprivk(char * path)
 
 int main(int argc, char* argv[]) {
     
-    if (argc < 5) {
-        printf ("very few arguemnts \n"); 
-        printf(" you need to isert 2 arguemnt only: id of KS and  path to its private key \n"); 
+
+    
+    if (argc >5 || argc <4 ) {
+        printf ("Wrong number of argument\n"); 
+        printf(" KS Id  enc_mode(ibe, rsa) [private key path (only for rsa mode)  sharing mode (sss,ksn) \n"); 
         return 1; 
         
     }
-
-    if (argc > 5) {
-        printf("Too many arguments\n"); 
-        
-        printf(" you need to isert 2 arguemnt only: id of KS and  path to its private key \n"); 
-        return 1;
-    }
     
     id = atoi(argv[1]);
-    char *privk_path =  argv[2];
-    char *enc_mode = argv[3];
-    char *key_share_mode = argv[4];
-
-    readprivk(privk_path);
-
+    
     sprintf(KeyStoreID, "%d", id);
     sprintf(ks_ibe_id, "keystore%d@tum.com", id);
 
     printf("key store ibe id: %s\n", ks_ibe_id);
-
-    if (!strncmp(key_share_mode, "ksn", 3)) {
-        ksn_mode = true;
+    
+    if (!strncmp(argv[2], "ibe", 3)){
+       
+        enc_mode = IBE ; 
+        if (!strncmp(argv[2], "ksn", 3))
+            sharing_mode = KSN;
+        else 
+            sharing_mode = SSS;
     }
-
-    if (!strncmp(key_share_mode, "sss", 3)) {
-        sss_mode = true;
+     else 
+     {
+        enc_mode = PKE ;
+        if (!strncmp(argv[4], "ksn", 3))
+            sharing_mode = KSN;
+        else 
+            sharing_mode = SSS;
     }
     
-    if (!strncmp(enc_mode, "ibe", 3)) {
-        ibe_mode = true;
-
+     /* 
+      *Encryption mode is IBE 
+      */
+     if (enc_mode) {
         pairing_init_set_buf(ibe_param_pub.pairing, TYPEA_PARAMS, strlen(TYPEA_PARAMS));
         if (!pairing_is_symmetric(ibe_param_pub.pairing)) pbc_die("pairing must be symmetric");
 
@@ -175,15 +171,17 @@ int main(int argc, char* argv[]) {
 
     }
 
-    if (!strncmp(enc_mode, "rsa", 3)) {
-        rsa_mode = true;
+    if (!enc_mode) {
+        char *privk_path =  argv[3];
+        readprivk(privk_path);
+        #ifdef CRYP_DBG  
+        printf(" private key :\n"); 
+        printf("%s", ks_pr_key);
+        #endif
+
     }
 
-    #ifdef CRYP_DBG  
-    printf(" private key :\n"); 
-    printf("%s", ks_pr_key);
-    #endif
-
+  
     int rc = 0;
     
     /** 
@@ -270,7 +268,8 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         int len;
 
         /* decrypt received message to get the  Master symmetric Key mk */
-        if (ibe_mode) {
+        //IBE mode 
+        if (enc_mode){
             int length = 2*BLOCK_SIZE;
             unsigned char Uc[ELEMENT_LEN];
             unsigned char plainmsg[length];
@@ -292,7 +291,8 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             memcpy(nonce, plainmsg + BLOCK_SIZE, BLOCK_SIZE);
         }
 
-        if (rsa_mode) {
+        // PKE mode 
+        if ( !enc_mode) {
             int length = BLOCK_SIZE+NONCE_SIZE;
             unsigned char plainmg[length]; 
             
@@ -415,9 +415,15 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         printf("**************************************\n");
         printf("*   Phase 2: receive  secret share   *\n");
         printf("**************************************\n");
-
-
-        if (ksn_mode) {
+        
+        
+        // Key splitting mode 
+        if (!sharing_mode) {
+            #ifdef CRYP_DBG
+            printf("**************************************\n");
+            printf("*   Sharing Mode: Key splitting mode *\n");
+            printf("**************************************\n");
+            #endif
             unsigned char EkSk[BLOCK_SIZE + 2 *  hashlen];
             unsigned char iv[BLOCK_SIZE];
             unsigned char dmsg [BLOCK_SIZE + 2 *  hashlen];
@@ -462,10 +468,17 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             }
         }
 
-        if (sss_mode) {
+        // Shamir's Secret Sharing 
+        if (sharing_mode) {
+             #ifdef CRYP_DBG
+            printf("**************************************\n");
+            printf("*   Sharing Mode: Shamir Secret Sharing *\n");
+            printf("**************************************\n");
+            #endif
             unsigned char EkSk[3*BLOCK_SIZE + 2*hashlen];
             unsigned char iv[BLOCK_SIZE];
-            unsigned char dmsg[key_len + 2*hashlen];
+            //unsigned char dmsg[key_len + 2*hashlen];
+            unsigned char dmsg[3*BLOCK_SIZE+ 2*hashlen];
             unsigned char rhpk[hashlen];
             unsigned char rht[hashlen];
 
@@ -477,6 +490,8 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             PrintHEX(EkSk, 3*BLOCK_SIZE + 2*hashlen);
             printf("Received iv: ");
             PrintHEX(iv, BLOCK_SIZE);
+            printf("Key to decrypt message: "); 
+            PrintHEX(ks_symm_key,BLOCK_SIZE );
             #endif
 
             rc = aes_decryption(EkSk, 3*BLOCK_SIZE+ 2 * hashlen, ks_symm_key, iv, dmsg);

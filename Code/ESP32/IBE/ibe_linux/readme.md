@@ -31,3 +31,10 @@ To use IBE on Linux machine, user needs to install gmp and pbc libraries.
     ```
 ### Run Test file 
 
+- Compile the test file 
+  `$ make`
+
+- Run the test 
+
+  `$ ./bfibe`	
+
