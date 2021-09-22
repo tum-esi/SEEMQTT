@@ -1,6 +1,8 @@
 # Identity Based Encryption (IBE) for ESP32
-We present here a practical IBE implementation, which requires GMP and PBC libraries, for ESP32 board. Cross-Compilation of GMP and PBC libraries is required to first be done.
-## 1. Cross-Compilation GMP library (version 6.2.0) for ESP32
+We present here a practical IBE implementation, which requires GMP and PBC libraries, for ESP32 board. Cross-Compilation of GMP and PBC libraries is required to first be done. 
+User can cross compile this libraries or can simply used precompiled libraries. 
+## Cross-Compilation 
+### 1. Cross-Compilation GMP library (version 6.2.0) for ESP32
 GMP is a free library for arbitrary precision arithmetic, operating on signed integers, rational numbers, and floating-point numbers.
 1. you need to download the GMP library source code from here: https://gmplib.org
 2. after unzip the library, create a text file  and save it as e.g. cross-compile-esp32.txt.
@@ -40,7 +42,7 @@ chmod +x cross-compile-esp32.txt && ./cross-compile-esp32.txt
 4. Run ```make && make install``` to generate static library **libgmp.a**, which will be located in our case under folder **/usr/local/lib/xtensa-esp32-elf/lib**.
 5. Done
 
-## 2. Cross-Compilation PBC library (version 0.5.14) for ESP32
+### 2. Cross-Compilation PBC library (version 0.5.14) for ESP32
 The PBC (Pairing-Based Cryptography) library is a free C library (released under the GNU Lesser General Public License) built on the GMP library that performs the mathematical operations underlying pairing-based cryptosystems.
 1. PBC library source code download: https://crypto.stanford.edu/pbc/download.html
 2. A wrapper around ./configure (https://github.com/ikalchev/kpabe-yct14-cpp/issues/2). Change the paths according to your own settings and save it as e.g. cross-compile-esp32.txt. After running the script, a **config.h** file will be generated.
@@ -76,10 +78,10 @@ chmod +x cross-compile-esp32.txt && ./cross-compile-esp32.txt
 4. Run ```make && make install``` to generate static library **libpbc.a**, which will be located in our case under folder **/usr/local/lib/xtensa-esp32-elf/lib**.
 5. Done
 
-## 3. Import pre-compiled libraries in Arduino
+### 3. Import pre-compiled libraries of step 1 and 2 into Arduino
 In order to use our pre-compiled GMP and PBC libraries (**libgmp.a** and **libpbc.a**) in Arduino, we need to construct the folders in correct format for them under Arduino/libraries. \
 See also the specification from Arduino: https://arduino.github.io/arduino-cli/library-specification/
-### 3.1 Add pre-compiled GMP library in Arduino
+#### 3.1 Add pre-compiled GMP library in Arduino
 1. Constructed GMP library folder 
 ```
 Arduino/libraries/gmp
@@ -106,7 +108,7 @@ precompiled=true
 ldflags=-lgmpesp32
 ```
 
-### 3.2 Add pre-compiled PBC library in Arduino
+#### 3.2 Add pre-compiled PBC library in Arduino
 1. Constructed PBC library folder
 ```
 Arduino/libraries/pbc/
@@ -156,7 +158,7 @@ includes=pbc.h
 precompiled=true
 ldflags=-lpbcesp32
 ```
-### 3.3 Change platform.txt in Arduino in order to use pre-compiled library
+#### 3.3 Change platform.txt in Arduino in order to use pre-compiled library
 See also the discussion for more details: https://forum.arduino.cc/index.php?topic=653746.0 \
 **platform.txt**: file is located in **~/.arduino15/packages/esp32/hardware/esp32/1.0.4** (under norml user not root).
 1. Add this line anywhere in platform.txt
@@ -172,7 +174,8 @@ recipe.c.combine.pattern="{compiler.path}{compiler.c.elf.cmd}" {compiler.c.elf.f
 ```
 compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_http_server -lbtdm_app -lspiffs -lbootloader_sup    port -lmdns -lnvs_flash -lfatfs -lpp -lnet80211 -ljsmn -lface_detection -llibsodium -lvfs -ldl_lib -llog -lfreertos -lcxx -lsmar    tconfig_ack -lxtensa-debug-module -lheap -ltcpip_adapter -lmqtt -lulp -lfd -lfb_gfx -lnghttp -lprotocomm -lsmartconfig -lm -leth    ernet -limage_util -lc_nano -lsoc -ltcp_transport -lc -lmicro-ecc -lface_recognition -ljson -lwpa_supplicant -lmesh -lesp_https_    ota -lwpa2 -lexpat -llwip -lwear_levelling -lapp_update -ldriver -lbt -lespnow -lcoap -lasio -lnewlib -lconsole -lapp_trace -les    p32-camera -lhal -lprotobuf-c -lsdmmc -lcore -lpthread -lcoexist -lfreemodbus -lspi_flash -lesp-tls -lwpa -lwifi_provisioning -l    wps -lesp_adc_cal -lesp_event -lopenssl -lesp_ringbuf -lfr  **-lgmpesp32** **-lpbcesp32** -lstdc++
 ```
-## Note
+
+### Note
 In our case, an error occurs during linking stage.
 ```
 in libc_nano.a undefined reference to "_PathLocale"
@@ -186,7 +189,30 @@ int __mlocale_changed = 0;
 int __nlocale_changed = 0;
 ```
 
-For Windows 10: 
-- you need to copy the precompiled libraries to "C:\Users\usename\Documents\Arduino\libraries".
-- you need to chang the "platform.txt"  file as we explained above. 
-- you can find the platform.text file at "C:\Users\usename\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.4\"
+## Using pre-compiled GMP and PBC libraries
+User can find a pre-compiled version of both libraries in the next folder: 
+To use these libraris, user must: 
+### 1. Add pre-compiled libraries into Arduino libraries folder
+Locating the Arduino libraries folder:
+- in case of using Linux:  **Arduino/libraries/**
+- in case of using Windows 10: **C:\Users\usename\Documents\Arduino\libraries**
+
+### 2. Change platform.txt in Arduino in order to use pre-compiled library
+Locating the platform.txt:
+- in case of using Linux: **~/.arduino15/packages/esp32/hardware/esp32/1.0.4**(under norml user not root)
+- in case of using Windows 10: **C:\Users\usename\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.4\**
+
+After locating the file: 
+1. Add this line anywhere in platform.txt
+```
+compiler.libraries.ldflags=
+```
+2. Add {compiler.libraries.ldflags} to recipe.c.combine.pattern
+```
+recipe.c.combine.pattern="{compiler.path}{compiler.c.elf.cmd}" {compiler.c.elf.flags} {compiler.c.elf.extra_flags} {compiler.libraries.ldflags} -Wl,--start-group {object_files} "{archive_file_path}" {compiler.c.elf.libs} -Wl,--end-group -Wl,-EL -o "{build.path}/{build.project_name}.elf"
+
+```
+3. Add this tow flages the end of the file 
+```
+compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_http_server -lbtdm_app -lspiffs -lbootloader_sup    port -lmdns -lnvs_flash -lfatfs -lpp -lnet80211 -ljsmn -lface_detection -llibsodium -lvfs -ldl_lib -llog -lfreertos -lcxx -lsmar    tconfig_ack -lxtensa-debug-module -lheap -ltcpip_adapter -lmqtt -lulp -lfd -lfb_gfx -lnghttp -lprotocomm -lsmartconfig -lm -leth    ernet -limage_util -lc_nano -lsoc -ltcp_transport -lc -lmicro-ecc -lface_recognition -ljson -lwpa_supplicant -lmesh -lesp_https_    ota -lwpa2 -lexpat -llwip -lwear_levelling -lapp_update -ldriver -lbt -lespnow -lcoap -lasio -lnewlib -lconsole -lapp_trace -les    p32-camera -lhal -lprotobuf-c -lsdmmc -lcore -lpthread -lcoexist -lfreemodbus -lspi_flash -lesp-tls -lwpa -lwifi_provisioning -l    wps -lesp_adc_cal -lesp_event -lopenssl -lesp_ringbuf -lfr  **-lgmpesp32** **-lpbcesp32** -lstdc++
+```
