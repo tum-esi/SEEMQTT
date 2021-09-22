@@ -190,7 +190,7 @@ int __nlocale_changed = 0;
 ```
 
 ## Using pre-compiled GMP and PBC libraries
-User can find a pre-compiled version of both libraries in the next folder: 
+User can find a pre-compiled version of both libraries in the next folder: **esp32_crosscompile**
 To use these libraris, user must: 
 ### 1. Add pre-compiled libraries into Arduino libraries folder
 Locating the Arduino libraries folder:
