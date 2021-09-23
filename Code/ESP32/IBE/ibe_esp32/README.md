@@ -160,7 +160,7 @@ ldflags=-lpbcesp32
 ```
 #### 3.3 Change platform.txt in Arduino in order to use pre-compiled library
 See also the discussion for more details: https://forum.arduino.cc/index.php?topic=653746.0 \
-**platform.txt**: file is located in **~/.arduino15/packages/esp32/hardware/esp32/1.0.4** (under norml user not root).
+**platform.txt**: file is located in **~/.arduino15/packages/esp32/hardware/esp32/1.0.4** (under normal user not root).
 1. Add this line anywhere in platform.txt
 ```
 compiler.libraries.ldflags=
