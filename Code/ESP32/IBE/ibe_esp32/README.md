@@ -191,15 +191,15 @@ int __nlocale_changed = 0;
 
 ## Using pre-compiled GMP and PBC libraries
 User can find a pre-compiled version of both libraries in the next folder: **esp32_crosscompile**
-To use these libraris, user must: 
+To use these libraries, you must: 
 ### 1. Add pre-compiled libraries into Arduino libraries folder
 Locating the Arduino libraries folder:
 - in case of using Linux:  **Arduino/libraries/**
 - in case of using Windows 10: **C:\Users\usename\Documents\Arduino\libraries**
 
-### 2. Change platform.txt in Arduino in order to use pre-compiled library
+### 2. Change platform.txt in Arduino in order to use the pre-compiled libraries
 Locating the platform.txt:
-- in case of using Linux: **~/.arduino15/packages/esp32/hardware/esp32/1.0.4**(under norml user not root)
+- in case of using Linux: **~/.arduino15/packages/esp32/hardware/esp32/1.0.4**(under normal user not root)
 - in case of using Windows 10: **C:\Users\usename\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.4\**
 
 After locating the file: 
