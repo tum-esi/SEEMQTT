@@ -1,12 +1,12 @@
 # Identity Based Encryption (IBE) for ESP32
-We present here a practical IBE implementation, which requires GMP and PBC libraries, for ESP32 board. Cross-Compilation of GMP and PBC libraries is required to first be done. 
-User can cross compile this libraries or can simply used precompiled libraries. 
-## Cross-Compilation 
+We present here a practical IBE implementation, which requires GMP and PBC libraries, for ESP32 board. Cross-Compilation of GMP and PBC libraries is required to first be done.
+User can cross compile this libraries or can simply used precompiled libraries.
+## Cross-Compilation
 ### 1. Cross-Compilation GMP library (version 6.2.0) for ESP32
 GMP is a free library for arbitrary precision arithmetic, operating on signed integers, rational numbers, and floating-point numbers.
 1. you need to download the GMP library source code from here: https://gmplib.org
 2. after unzip the library, create a text file  and save it as e.g. cross-compile-esp32.txt.
-3. copy the next code ( A wrapper around ./configure (https://github.com/ikalchev/kpabe-yct14-cpp/issues/2).) into the file and change the paths according to your own settings. 
+3. copy the next code ( A wrapper around ./configure (https://github.com/ikalchev/kpabe-yct14-cpp/issues/2).) into the file and change the paths according to your own settings.
 4.  After running the text file we just generated, a **config.h** file will be generated.
 
 ```
@@ -82,7 +82,7 @@ chmod +x cross-compile-esp32.txt && ./cross-compile-esp32.txt
 In order to use our pre-compiled GMP and PBC libraries (**libgmp.a** and **libpbc.a**) in Arduino, we need to construct the folders in correct format for them under Arduino/libraries. \
 See also the specification from Arduino: https://arduino.github.io/arduino-cli/library-specification/
 #### 3.1 Add pre-compiled GMP library in Arduino
-1. Constructed GMP library folder 
+1. Constructed GMP library folder
 ```
 Arduino/libraries/gmp
 ├── library.properties
@@ -170,7 +170,7 @@ compiler.libraries.ldflags=
 recipe.c.combine.pattern="{compiler.path}{compiler.c.elf.cmd}" {compiler.c.elf.flags} {compiler.c.elf.extra_flags} {compiler.libraries.ldflags} -Wl,--start-group {object_files} "{archive_file_path}" {compiler.c.elf.libs} -Wl,--end-group -Wl,-EL -o "{build.path}/{build.project_name}.elf"
 
 ```
-3. Add this tow flages the end of the file 
+3. Add this tow flages the end of the file
 ```
 compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_http_server -lbtdm_app -lspiffs -lbootloader_sup    port -lmdns -lnvs_flash -lfatfs -lpp -lnet80211 -ljsmn -lface_detection -llibsodium -lvfs -ldl_lib -llog -lfreertos -lcxx -lsmar    tconfig_ack -lxtensa-debug-module -lheap -ltcpip_adapter -lmqtt -lulp -lfd -lfb_gfx -lnghttp -lprotocomm -lsmartconfig -lm -leth    ernet -limage_util -lc_nano -lsoc -ltcp_transport -lc -lmicro-ecc -lface_recognition -ljson -lwpa_supplicant -lmesh -lesp_https_    ota -lwpa2 -lexpat -llwip -lwear_levelling -lapp_update -ldriver -lbt -lespnow -lcoap -lasio -lnewlib -lconsole -lapp_trace -les    p32-camera -lhal -lprotobuf-c -lsdmmc -lcore -lpthread -lcoexist -lfreemodbus -lspi_flash -lesp-tls -lwpa -lwifi_provisioning -l    wps -lesp_adc_cal -lesp_event -lopenssl -lesp_ringbuf -lfr  **-lgmpesp32** **-lpbcesp32** -lstdc++
 ```
@@ -191,7 +191,7 @@ int __nlocale_changed = 0;
 
 ## Using pre-compiled GMP and PBC libraries
 User can find a pre-compiled version of both libraries in the next folder: **esp32_crosscompile**
-To use these libraries, you must: 
+To use these libraries, you must:
 ### 1. Add pre-compiled libraries into Arduino libraries folder
 Locating the Arduino libraries folder:
 - in case of using Linux:  **Arduino/libraries/**
@@ -202,7 +202,7 @@ Locating the platform.txt:
 - in case of using Linux: **~/.arduino15/packages/esp32/hardware/esp32/1.0.4**(under normal user not root)
 - in case of using Windows 10: **C:\Users\usename\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.4\**
 
-After locating the file: 
+After locating the file:
 1. Add this line anywhere in platform.txt
 ```
 compiler.libraries.ldflags=
@@ -218,5 +218,5 @@ compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_
 ```
 
 ##  Performence TEST 
-The ibe_esp32.io is a project to test and evaluate the performance evaluation of the four primary operations of IBE:  setup, extract, encryption and decryption. 
-We use multiple message sizes for evaluating the encryption and decryption (Setup and extract are independent of the message size). Also, the program measure the one time overhead (OTO) that is required during the encryption  
+The ibe_esp32.io is a project to test and evaluate the performance evaluation of the four primary operations of IBE:  setup, extract, encryption and decryption.
+We use multiple message sizes for evaluating the encryption and decryption (Setup and extract are independent of the message size). Also, the program measures the one-time overhead (OTO) during the encryption.  
