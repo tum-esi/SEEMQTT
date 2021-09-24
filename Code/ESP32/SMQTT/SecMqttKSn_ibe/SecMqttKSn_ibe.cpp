@@ -255,6 +255,7 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
 
     // TODO
     // add tag and tag_len to the Eskmsg
+
     beginPublish(topic,  msg_len, true);
     write((byte*)Eskmsg, msg_len);
     endPublish();
@@ -282,14 +283,8 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
 }
 
 void SecMqtt::SecSessionKeyUpdate() {
-    /**
-     * Send the shares genrated based on the message key to Keystores
-     *
-     *
-           ***********************
-           | En(sk, hc, ht)| iv  |
-           * *********************
-    */
+
+
     unsigned long t_b = micros();
 
     #ifdef DBG_MSG
@@ -302,6 +297,8 @@ void SecMqtt::SecSessionKeyUpdate() {
     this->_sk_counter = 0;
     unsigned char iv[BLOCK_SIZE];
     unsigned char iv_tmp[BLOCK_SIZE];
+    const char  * aad = "";
+    unsigned char tag[BLOCK_SIZE];
 
     sym_key_generator(this->_session_key);
 
@@ -309,6 +306,7 @@ void SecMqtt::SecSessionKeyUpdate() {
     Serial.print("Session Key: ");
     PrintHEX(this->_session_key, BLOCK_SIZE);
     #endif
+
     /* secret splitting */
     if (this->_ksn_mode) {
         time_info.t_s = micros();
@@ -322,6 +320,7 @@ void SecMqtt::SecSessionKeyUpdate() {
         time_info.t_keysplit = micros() - time_info.t_s;
     }
 
+    /* Hashing the topic name  H(t_i) */
     rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (const unsigned char *)DATA, strlen(DATA), this->_iot_data_hash);
     if (rc != 0) {
         Serial.println("failed to hash DATA!");
@@ -338,20 +337,20 @@ void SecMqtt::SecSessionKeyUpdate() {
             PrintHEX(this->_shares[i], BLOCK_SIZE);
             #endif
 
-            unsigned char msg[BLOCK_SIZE + 2*HASH_LEN];
-            unsigned char msg_enc[BLOCK_SIZE + 2*HASH_LEN];
-            size_t m_len = BLOCK_SIZE + 2*HASH_LEN + BLOCK_SIZE;
+            unsigned char msg[BLOCK_SIZE + HASH_LEN];
+            unsigned char msg_enc[BLOCK_SIZE + HASH_LEN];
+            size_t m_len = 3 *BLOCK_SIZE + HASH_LEN  ; //IV + tag + mag_enc
             unsigned char buffer[m_len];
 
             esp_fill_random(iv, BLOCK_SIZE);
             memcpy(iv_tmp, iv, BLOCK_SIZE);
 
             memcpy(msg, this->_shares[i], BLOCK_SIZE);
-            memcpy(msg + BLOCK_SIZE, this->_iot_pk_key_hash, HASH_LEN);
-            memcpy(msg + BLOCK_SIZE + HASH_LEN, this->_iot_data_hash, HASH_LEN);
+            memcpy(msg + BLOCK_SIZE, this->_iot_data_hash, HASH_LEN);
 
             time_info.t_s = micros();
-            rc = aes_encryption(msg, BLOCK_SIZE + 2*HASH_LEN, ksn_list[i].masterkey, iv_tmp, msg_enc);
+            rc = aes_gcm_encryption(msg,BLOCK_SIZE + HASH_LEN,ksn_list[i].masterkey,iv_tmp,msg_enc, (unsigned char *)aad, strlen(aad), tag, BLOCK_SIZE);
+            //rc = aes_encryption(msg, BLOCK_SIZE + 2*HASH_LEN, ksn_list[i].masterkey, iv_tmp, msg_enc);
             time_info.t_p3enc = micros() - time_info.t_s;
             if (rc != 0) {
                 Serial.println("Failed to encrypt the session key!");
@@ -362,8 +361,9 @@ void SecMqtt::SecSessionKeyUpdate() {
                 #endif
             }
 
-            memcpy(buffer, msg_enc, BLOCK_SIZE + 2*HASH_LEN);
-            memcpy(buffer + BLOCK_SIZE + 2*HASH_LEN, iv, BLOCK_SIZE);
+            memcpy(buffer, msg_enc, BLOCK_SIZE + HASH_LEN);
+            memcpy(buffer + BLOCK_SIZE + HASH_LEN, iv, BLOCK_SIZE);
+            memcpy(buffer + 2*BLOCK_SIZE + HASH_LEN, tag, BLOCK_SIZE);
 
             sprintf(ksn_list[i].sk_topic, "%s/%d", this->_sk_topic, i + 1);
 
@@ -386,47 +386,70 @@ void SecMqtt::SecSessionKeyUpdate() {
             Serial.printf("%.*s\n", SSS_SIZE, this->_shares_sss[i]);
             #endif
 
-            /* msg has to be multiple of 16 bytes aes cbc mode
+            /*
+             * msg has to be multiple of 16 bytes aes cbc mode
              * we add 09 as padding
-             * */
-            int padding = 16  - (SSS_SIZE + 2*HASH_LEN)%16;
-            int msglen = SSS_SIZE + 2*HASH_LEN + padding;
+             */
+            int padding = 16  - (SSS_SIZE + HASH_LEN)%16;
+            int msglen = SSS_SIZE + HASH_LEN + padding;
             unsigned char msg[msglen];
             unsigned char msg_enc[msglen];
-            size_t m_len = 3*BLOCK_SIZE + 2*HASH_LEN + BLOCK_SIZE;
-            unsigned char *buffer = (unsigned char *)malloc(m_len);
+
 
             esp_fill_random(iv, BLOCK_SIZE);
             memcpy(iv_tmp, iv, BLOCK_SIZE);
 
             memcpy(msg, this->_shares_sss[i], SSS_SIZE);
-            memcpy(msg + SSS_SIZE, this->_iot_pk_key_hash, HASH_LEN);
-            memcpy(msg + SSS_SIZE + HASH_LEN, this->_iot_data_hash, HASH_LEN);
-            memset(msg + SSS_SIZE + 2*HASH_LEN, padding, padding);
+            //memcpy(msg + SSS_SIZE, this->_iot_pk_key_hash, HASH_LEN);
+            memcpy(msg + SSS_SIZE, this->_iot_data_hash, HASH_LEN);
+            memset(msg + SSS_SIZE + HASH_LEN, padding, padding);
 
             time_info.t_s = micros();
-            rc = aes_encryption(msg, SSS_SIZE + 2*HASH_LEN + 9, ksn_list[i].masterkey, iv_tmp, msg_enc);
+            //rc = aes_encryption(msg, SSS_SIZE + 2*HASH_LEN + 9, ksn_list[i].masterkey, iv_tmp, msg_enc);
+            rc = aes_gcm_encryption(msg, msglen,ksn_list[i].masterkey,iv_tmp,msg_enc, (unsigned char *)aad, strlen(aad), tag, BLOCK_SIZE);
             time_info.t_p3enc = micros() - time_info.t_s;
             if (rc != 0) {
-                Serial.println("Failed to encrypt the session key!");
+                Serial.println("Failed to encrypt secret share key!");
                 return ;
             } else {
                 #ifdef DBG_MSG
-                Serial.println("succeed to encrypt session key!");
+                Serial.println("succeed to encrypt secret share key!");
+                Serial.printf("Encrypted message:\n");
+                PrintHEX(msg_enc, msglen);
+                Serial.printf("Tag:\n");
+                PrintHEX(tag, BLOCK_SIZE);
+                Serial.printf("IV:\n");
+                PrintHEX(iv, BLOCK_SIZE);
                 #endif
             }
 
-            memcpy(buffer, msg_enc, 3*BLOCK_SIZE + 2*HASH_LEN);
-            memcpy(buffer + 3*BLOCK_SIZE + 2*HASH_LEN, iv, BLOCK_SIZE);
+
+            /**
+                   **********************************************
+                   * E_EtM(alpha_i, H(t_i))|iv|tag|H(iot_pk_key)*
+                   * ********************************************
+            */
+            //size_t m_len = 3*BLOCK_SIZE + HASH_LEN + BLOCK_SIZE;
+            size_t m_len  = msglen  + BLOCK_SIZE + BLOCK_SIZE+ HASH_LEN ;
+            unsigned char buffer[m_len] = {0x0};
+
+            //memcpy(buffer, msg_enc, 3*BLOCK_SIZE + 2*HASH_LEN);
+            memcpy(buffer, msg_enc, msglen);
+            memcpy(buffer + msglen, iv, BLOCK_SIZE);
+            memcpy(buffer + msglen +BLOCK_SIZE , tag, BLOCK_SIZE);
+            memcpy(buffer + msglen +BLOCK_SIZE+ BLOCK_SIZE, this->_iot_pk_key_hash, HASH_LEN);
 
             sprintf(ksn_list[i].sk_topic, "%s/%d", this->_sk_topic, i + 1);
-
             #ifdef DBG_MSG
             Serial.print("publish key shares to KeyStores under sk topic: ");
             Serial.println(ksn_list[i].sk_topic);
             Serial.printf("Share [%d]\n", i );
             PrintHEX(msg, SSS_SIZE);
+
+            Serial.printf(" the buffer:\n");
+            PrintHEX(buffer, (int)m_len);
             #endif
+
 
             time_info.t_s = micros();
             beginPublish(ksn_list[i].sk_topic, m_len, false);
@@ -434,7 +457,6 @@ void SecMqtt::SecSessionKeyUpdate() {
             endPublish();
             time_info.t_p3send = micros() - time_info.t_s;
 
-            free(buffer);
         }
     }
 
@@ -717,6 +739,22 @@ int SecMqtt::aes_decryption(const unsigned char* input, size_t input_len, const 
     return rc;
 }
 
+
+/*
+ * Function: aes_gcm_encryption
+ * ----------------------------
+ *   Perform authenticated encryption using AES-GEM mode
+ *
+ *   input:  plaintext
+ *   input_len: plaintext lenght
+ *   key: Secret key
+ *   iv: initializtion vector
+ *   output: ciphertext
+ *   tag: message authentication code
+ *   tag_len: tag lenght
+ *
+ *   returns: 0 (succeed), -1 (Failed)
+ */
 int SecMqtt::aes_gcm_encryption(const unsigned char* input, size_t input_len, const unsigned char* key,
         unsigned char* iv, unsigned char* output, const unsigned char* add, size_t add_len, unsigned char* tag, size_t tag_len) {
 
@@ -741,7 +779,21 @@ int SecMqtt::aes_gcm_encryption(const unsigned char* input, size_t input_len, co
     #endif
     return 0;
 }
-
+/*
+ * Function: aes_gcm_decryption
+ * ----------------------------
+ *   Perform authenticated encryption using AES-GEM mode
+ *
+ *   input:  ciphertext
+ *   input_len: ciphertext lenght
+ *   key: Secret key
+ *   iv: initializtion vector
+ *   output: plaintext
+ *   tag: message authentication code
+ *   tag_len: tag lenght
+ *
+ *   returns: 0 (succeed), -1 (Failed)
+ */
 int SecMqtt::aes_gcm_decryption(const unsigned char* input, size_t input_len, const unsigned char* key,
         unsigned char* iv, unsigned char* output, const unsigned char* add, size_t add_len, unsigned char* tag, size_t tag_len) {
 
