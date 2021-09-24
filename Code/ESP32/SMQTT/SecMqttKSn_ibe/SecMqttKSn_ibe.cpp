@@ -282,22 +282,19 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
 }
 
 void SecMqtt::SecSessionKeyUpdate() {
-
     /**
      * Send the shares genrated based on the message key to Keystores
      *
      *
            ***********************
-           *                |    |
-           *  En(sk, hc, ht)| iv |
-           *                |    |
+           | En(sk, hc, ht)| iv  |
            * *********************
     */
     unsigned long t_b = micros();
 
     #ifdef DBG_MSG
     Serial.println("**************************************");
-    Serial.println("*   Phase 2: negotiate session key   *");
+    Serial.println("*   Phase 2: Topic Key Distribution   *");
     Serial.println("**************************************");
     #endif
 
