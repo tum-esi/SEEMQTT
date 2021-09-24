@@ -60,10 +60,11 @@ void SecMqtt::SecConnect(const char *client_id) {
         unsigned char keync_enc[KSN_NUM][512];
 
         #ifdef DBG_MSG
-        Serial.println("*************************************");
-        Serial.println("*   Phase 1: negotiate master key   *");
-        Serial.println("*************************************");
-        Serial.println("Phase 1: Publishing Epk(K1) and nonce");
+        Serial.println("*************************************************");
+        Serial.println("*  Phase I: Symmetric Master Key Distribution   *");
+        Serial.println("*************************************************");
+        Serial.println("Phase I-1: Publishing Epk(K1) and nonce");
+        Serial.println("*************************************************");
         #endif
 
         /* setup key store list */
@@ -173,7 +174,12 @@ void SecMqtt::SecConnect(const char *client_id) {
         unsigned long etime;
 
         #ifdef DBG_MSG
-        Serial.println("Waiting for Key Stores to response ...");
+
+        Serial.println("*************************************************");
+        Serial.println("   Phase I-2: Reciving acknowledgements         ");
+        Serial.println("*************************************************");
+        Serial.println("   Waiting for Key Stores to response ...        ");
+        Serial.println("*************************************************");
         #endif
 
         while(this->_secmqtt_state != SECMQTT_CONNECT_GOOD_NONCE) {
@@ -211,11 +217,11 @@ void SecMqtt::SecConnect(const char *client_id) {
 void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg_len) {
 
     /**
-     * Phase 3: Publish message encrypted using session key (Esk(msg))
+     * Encrypte message using  the topic  key (E_EtM(msg)) and publish the encrypted message
      */
     #ifdef DBG_MSG
     Serial.println("**************************************************");
-    Serial.println("*   Phase 3: Publish message using session key   *");
+    Serial.println("*   Phase III: Encrypted Message Transmission      *");
     Serial.println("**************************************************");
     #endif
 
@@ -232,20 +238,21 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     unsigned long t_b = micros();
 
     #ifdef DBG_MSG
-    Serial.println("Phase 3: Publishing encrypted message ...");
+    Serial.println("Phase III: Publishing encrypted message ...");
     #endif
 
-    unsigned char *Eskmsg = (unsigned char *) malloc(msg_len);
+    unsigned char Eskmsg [msg_len] ={0x0};
     unsigned char iv[BLOCK_SIZE], iv_tmp[BLOCK_SIZE];
     esp_fill_random(iv, BLOCK_SIZE);
     memcpy(iv_tmp, iv, BLOCK_SIZE);
 
-    const char *auth_msg = "TUM IoT Security";
-    const char *auth_msg_fake = "TUM IoT Hacker";
+    /* additional data to be used for the AES-GCM*/
+    const char *auth_msg = "";
     unsigned char tag[BLOCK_SIZE];
     size_t tag_len = BLOCK_SIZE;
 
-    aes_gcm_encryption(msg, msg_len, this->_session_key, iv_tmp, Eskmsg, (const unsigned char*)auth_msg, (size_t)strlen(auth_msg), tag, tag_len);
+    int result = aes_gcm_encryption(msg, msg_len, this->_session_key, iv_tmp, Eskmsg, (const unsigned char*)auth_msg, (size_t)strlen(auth_msg), tag, tag_len);
+
     #ifdef DBG_MSG
     Serial.print("plantext user message: ");
     PrintHEX((unsigned char*)msg, msg_len);
@@ -253,11 +260,22 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     PrintHEX(Eskmsg, msg_len);
     #endif
 
-    // TODO
-    // add tag and tag_len to the Eskmsg
+    /* prepare the transmited messgae
+       ******************************
+       * tag  | iv |msg_len| enc_msg *
+       ******************************
+    */
+    int mlen  = 2 * BLOCK_SIZE + sizeof(int)+ msg_len;
+    int length = msg_len;
+    unsigned char buffer[msg_len] = {0x0};
+    memcpy(buffer, tag, BLOCK_SIZE);
+    memcpy(buffer+BLOCK_SIZE, iv, BLOCK_SIZE);
+    memcpy(buffer+2*BLOCK_SIZE, &length, sizeof(int));
+    memcpy(buffer+2*BLOCK_SIZE +sizeof(int), Eskmsg, msg_len);
 
-    beginPublish(topic,  msg_len, true);
-    write((byte*)Eskmsg, msg_len);
+
+    beginPublish(topic,  mlen, false);
+    write((byte*)buffer, mlen);
     endPublish();
     this->_sk_counter += 1;
 
@@ -270,16 +288,6 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     #ifdef TIME_MSG
     Serial.printf("time publish message: %lu (us)\n", t_e - t_b);
     #endif
-
-    #ifdef DBG_MSG
-    unsigned char outmsg[msg_len];
-    aes_gcm_decryption(Eskmsg, msg_len, this->_session_key, iv_tmp, outmsg, (const unsigned char*)auth_msg_fake, (size_t)strlen(auth_msg_fake),
-            tag, tag_len);
-    Serial.printf("Decrypted user message: ");
-    PrintHEX(outmsg, msg_len);
-    #endif
-
-    free(Eskmsg);
 }
 
 void SecMqtt::SecSessionKeyUpdate() {
@@ -289,7 +297,7 @@ void SecMqtt::SecSessionKeyUpdate() {
 
     #ifdef DBG_MSG
     Serial.println("**************************************");
-    Serial.println("*   Phase 2: Topic Key Distribution   *");
+    Serial.println("*   Phase II: Topic Key Distribution   *");
     Serial.println("**************************************");
     #endif
 
@@ -444,7 +452,7 @@ void SecMqtt::SecSessionKeyUpdate() {
             Serial.print("publish key shares to KeyStores under sk topic: ");
             Serial.println(ksn_list[i].sk_topic);
             Serial.printf("Share [%d]\n", i );
-            PrintHEX(msg, SSS_SIZE);
+            PrintHEX(msg, (int)SSS_SIZE);
 
             Serial.printf(" the buffer:\n");
             PrintHEX(buffer, (int)m_len);
@@ -463,40 +471,6 @@ void SecMqtt::SecSessionKeyUpdate() {
     unsigned long t_e = micros();
 
     /* transmit the credential */
-    /*
-    int siglength = 128;
-    int maxlen = 2048;
-
-    char *credential = (char *) malloc(maxlen);
-    char *condition = "(app_domain==\"KS\")-> { (Process) < 2500) -> _MAX_TRUST";
-
-    sprintf(credential, "KeyNote-Version: 2\nAuthorizer: \"%s\" \nLicensees: \"%s\" \nConditions:%s\nSignature: ", this->_iot_pk_key, ksn_list[0].ibe_id, condition);
-
-    #ifdef DBG_MSG
-    Serial.printf("credential: %s\n", credential);
-    #endif
-
-    unsigned char signature[siglength];
-
-    //sign the credential
-    time_info.t_s = micros();
-    //rsa_sign((unsigned char *)credential, strlen(credential), signature);
-    char * result =  kn_rsa_sign_md5((unsigned char *)credential,strlen(credential),  this->_iot_pr_key, this->_iot_pr_key_size, signature);
-    char * kn_sign = kn_encode_signture("",result) ;
-    time_info.t_cred_sign = micros() - time_info.t_s;
-
-    #ifdef DBG_MSG
-    Serial.println("signed credential: ");
-    Serial.println(kn_sign );
-    #endif
-
-    int cr_len = siglength + strlen(credential);
-
-    unsigned char cr_buffer[cr_len];
-
-    memcpy(cr_buffer, signature, siglength);
-    memcpy(cr_buffer + siglength, credential, strlen(credential));
-    */
     int cr_len = this->_iot_credntial_size;
     unsigned char cr_buffer[cr_len];
     memcpy(cr_buffer, this->_iot_credntial, cr_len);
@@ -504,16 +478,6 @@ void SecMqtt::SecSessionKeyUpdate() {
     beginPublish(CR,  cr_len, false);
     write((byte*)cr_buffer, cr_len);
     endPublish();
-
-    /*
-    #ifdef DBG_MSG
-    Serial.println("signed credential: ");
-    PrintHEX(cr_buffer, cr_len);
-    #endif
-
-    free(credential);
-
-    */
 
     #ifdef DBG_MSG
     Serial.printf(" signed credential: %s\n",cr_buffer );
@@ -755,8 +719,7 @@ int SecMqtt::aes_decryption(const unsigned char* input, size_t input_len, const 
  *
  *   returns: 0 (succeed), -1 (Failed)
  */
-int SecMqtt::aes_gcm_encryption(const unsigned char* input, size_t input_len, const unsigned char* key,
-        unsigned char* iv, unsigned char* output, const unsigned char* add, size_t add_len, unsigned char* tag, size_t tag_len) {
+int SecMqtt::aes_gcm_encryption(const unsigned char* input, size_t input_len, const unsigned char* key, unsigned char* iv, unsigned char* output, const unsigned char* add, size_t add_len, unsigned char* tag, size_t tag_len) {
 
     int rc = 0;
     size_t iv_len = BLOCK_SIZE;

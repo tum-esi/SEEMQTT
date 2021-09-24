@@ -17,7 +17,7 @@ const char* password = "30576988";
 const char* mqtt_server = "192.168.0.110";
 
 const int mqttPort = 1883;
-const char* topic = "mhh_my_topic";
+const char* topic = "iot_data";
 String clientId = "ESP32Client-";
 unsigned long lastMsg = 0;
 unsigned char* mymsg;
@@ -284,7 +284,7 @@ void loop() {
   }
 
   unsigned long now = millis();
-  if (now - lastMsg > 3000) {
+  if (now - lastMsg > 10000) {
     lastMsg = now;
 
     if(mqttclient.get_state() == SECMQTT_KS_CONNECTED) {
