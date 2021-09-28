@@ -14,23 +14,13 @@
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/aes.h>
+#include <openssl/sha.h>
 #include <sys/stat.h>
 #include <mosquitto.h>
 #include <pbc/pbc.h>
 
-
-//#define SELFTEST
-#define CRYP_DBG
-#define DBG
-#define DBG_MSG
-#define SELF_TEST
-#define TOPIC_SIZE 50
-#define BLOCK_SIZE 16
-#define NONCE_SIZE 16
-#define MAX_TEXT_SIZE 1024
-#define PKLEN 273
-#define HASH_LEN 32
-#define ELEMENT_LEN 128
+#include "typ.h"
+#include "db.h"
 
 /* definition of curve parameters */
 #define TYPEA_PARAMS \
