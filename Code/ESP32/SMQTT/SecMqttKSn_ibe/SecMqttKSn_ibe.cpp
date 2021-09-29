@@ -1,12 +1,3 @@
-/*
- * Copyright (c) 2021 Hangmao Liu <liuhangmao@hotmail.com>
- *                    Mohammad Hamad <mohammad.hamad@tum.de>
- *
- * This library is free software; you can redistribute it and/or modify
- * it under the terms of the MIT license. See COPYING for details.
- *
- */
-
 #include "SecMqttKSn_ibe.h"
 
 
@@ -267,6 +258,10 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     PrintHEX((unsigned char*)msg, msg_len);
     Serial.print("Encrypted user message: ");
     PrintHEX(Eskmsg, msg_len);
+    Serial.print("Tag: ");
+    PrintHEX(tag, tag_len);
+    Serial.print("IV: ");
+    PrintHEX(iv, BLOCK_SIZE);
     #endif
 
     /* prepare the transmited messgae
@@ -276,15 +271,18 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     */
     int mlen  = 2 * BLOCK_SIZE + sizeof(int)+ msg_len;
     int length = msg_len;
-    unsigned char buffer[msg_len] = {0x0};
-    memcpy(buffer, tag, BLOCK_SIZE);
-    memcpy(buffer+BLOCK_SIZE, iv, BLOCK_SIZE);
-    memcpy(buffer+2*BLOCK_SIZE, &length, sizeof(int));
-    memcpy(buffer+2*BLOCK_SIZE +sizeof(int), Eskmsg, msg_len);
+    unsigned char mbuffer[mlen] = {0x0};
+    memcpy(mbuffer, tag, BLOCK_SIZE);
+    memcpy(mbuffer+BLOCK_SIZE, iv, BLOCK_SIZE);
+    memcpy(mbuffer+2*BLOCK_SIZE, &length, sizeof(int));
+    memcpy(mbuffer+2*BLOCK_SIZE +sizeof(int), Eskmsg, msg_len);
 
-
+    #ifdef DBG_MSG
+    Serial.print("plantext user message: ");
+    PrintHEX(mbuffer, mlen);
+    #endif
     beginPublish(topic,  mlen, false);
-    write((byte*)buffer, mlen);
+    write((byte*)mbuffer, mlen);
     endPublish();
     this->_sk_counter += 1;
 

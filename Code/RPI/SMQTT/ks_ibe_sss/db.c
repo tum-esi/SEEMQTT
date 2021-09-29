@@ -105,9 +105,9 @@ void  Printlst(LIST lst)
 		fprintf(fptr, "%x", lst.msymk[i]); 
 	fprintf(fptr, "%s", "|"); 
 	
-	for (i = 0; i< SHAR_LEN; i++)
-		fprintf(fptr, "%x", lst.shar[i]); 
-
+	//for (i = 0; i< SHAR_LEN; i++)
+		//fprintf(fptr, "%x", lst.shar[i]); 
+	fprintf(fptr, "%s", lst.shar);
 	fprintf(fptr, "%s", "|\n"); 
 
    fclose(fptr);

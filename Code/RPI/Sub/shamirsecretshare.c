@@ -1,28 +1,3 @@
-/*
-     shamirsecretshare.c -- Shamir's Secret Sharing
-     Adopted from the implementaion of shamir's secret sharing of Fletcher T. Penney:
-     http://fletcher.github.io/c-sss/index.html
-     ## The MIT License ##
-
-     Permission is hereby granted, free of charge, to any person obtaining a copy
-     of this software and associated documentation files (the "Software"), to deal
-     in the Software without restriction, including without limitation the rights
-     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-     copies of the Software, and to permit persons to whom the Software is
-     furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-    THE SOFTWARE.
-    */
-
 #include "shamirsecretshare.h"
 
 int modular_exponentiation(int base, int exp, int mod) {
@@ -44,7 +19,7 @@ int modular_exponentiation(int base, int exp, int mod) {
   a polynomial will be created with degree of t
 */
 int *split_number(int number, int n, int t) {
-
+    
     int *shares = (int *) malloc(sizeof(int) * n);
     int *coef =  (int *)malloc(sizeof(int) * t);
     int x;
@@ -106,7 +81,7 @@ int *gcdD(int a, int b) {
 }
 
 int modInverse(int k) {
-
+  
     k = k % PRIME;
 
     int r;
@@ -287,14 +262,9 @@ char *join_strings(char ** shares, int n) {
 
   return result;
 }
-/*
-* generate_share_strings: apply shamir secret sharing
-* char * secret: the secret
-* int n: total number of KeyStores
-* int t: the thresould
-*/ 
-char *generate_share_strings(char * secret, int n, int t) {
 
+char *generate_share_strings(char * secret, int n, int t) {
+    
     char ** result = (char **)split_string(secret, n, t);
 
     int len = BLOCK_SIZE;
@@ -309,7 +279,7 @@ char *generate_share_strings(char * secret, int n, int t) {
     }
 
     #ifdef DBG_MSG
-    printf("%s\n",shares);
+    Serial.println(shares);
     #endif
     free_string_shares(result, n);
 
@@ -399,14 +369,14 @@ char * extract_secret_from_share_strings(const char * string) {
         trim_trailing_whitespace(shares[i]);
 
         if ((shares[i] != NULL) && (strlen(shares[i]) == 0)) {
-
+   
             free(shares[i]);
             i--;
         }
     }
 
     i++;
-
+ 
     char * secret =(char *) join_strings(shares, i);
 
     free_string_shares(shares, i);

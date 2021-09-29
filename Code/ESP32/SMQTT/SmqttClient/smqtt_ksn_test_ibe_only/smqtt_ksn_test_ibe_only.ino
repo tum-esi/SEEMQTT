@@ -289,7 +289,10 @@ void loop() {
 
     if(mqttclient.get_state() == SECMQTT_KS_CONNECTED) {
         Serial.printf("test %d\n", test_times);
-        mqttclient.SecPublish(topic, mymsg, Size_Byte);
+        char * txt = "Hello world hii"; 
+        int len = 16 ; 
+        //mqttclient.SecPublish(topic, mymsg, Size_Byte);
+        mqttclient.SecPublish(topic, (unsigned char *) txt, len);
         test_times += 1;
     } else {
         mqttclient.SecConnect(clientId.c_str());

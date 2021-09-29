@@ -1,12 +1,3 @@
-/*
- * Copyright (c) 2021 Hangmao Liu <liuhangmao@hotmail.com>
- *                    Mohammad Hamad <mohammad.hamad@tum.de>
- *
- * This library is free software; you can redistribute it and/or modify
- * it under the terms of the MIT license. See COPYING for details.
- *
- */
-
 #ifndef _SECCONFIG_H
 #define _SECCONFIG_H
 

@@ -44,12 +44,7 @@ static int kn_myrand(void *rng_state, unsigned char *output, size_t len)
 
 void  kn_GenCredential (const unsigned char * cre, int cr_len , const unsigned char * auth_pr, int prk_len,  unsigned char ** sig_cre,  int * relen)
 {
-  //printf("******* here***\n" );
-  //printf("input: auth_pr=  %s\n", auth_pr);
-  //printf("input: auth_pr_len=  %s\n", prk_len);
-  //printf("input: cre = %s\n", cre);
-  //printf("input: len = %d\n", cr_len);
-  //printf("input: result len=  %s\n", *relen);
+
   unsigned char signature[128]={0};
   //int tmprlen = 888;
   char * result =  kn_rsa_sign_md5(cre,cr_len,  auth_pr, prk_len, signature);
