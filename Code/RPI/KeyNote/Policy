@@ -1,0 +1,9 @@
+Authorizer: "POLICY"
+Licensees: "rsa-hex:30818902818100ab75540e18e4ebf41566092b98\
+            f13ecf3be2e57706fc3e31ce67b08d343efc9c6ffadf9434e\
+            2adb01ba38b42131dc5fda701fa20e61e603b2fc97b827ee9\
+            1080402aef7d21b3e47f2e4e15df2e6d5d4f2fe49efb76302\
+            f19a2d0c6e22dde19a59d67ff7b35d8bfc7557e658aa6a8ef\
+            4d7c7bc6fd0395fe1412d8a667b5a2354d0203010001"
+Comment: A slightly more complicated policy
+Conditions: count == "1" -> "true";

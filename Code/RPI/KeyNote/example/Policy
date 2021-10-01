@@ -1,0 +1,9 @@
+Authorizer: "POLICY"
+Licensees: "rsa-hex:30818902818100da12495925106c5b196d11f1a3\
+            341bb04f78f3449d674be33ea53314dd357fef111d7163b40\
+            e5644035a892b56bbe448701a27d42d7193ad358479a6665f\
+            79640e5ac0ec075035c36ac639b322dbc149bc288ff7fda77\
+            3ba253625eef82fbf987fe080838a973c5084f0e5490e0f47\
+            6039fee3c3cba472d46d62de8bcbd940590203010001"
+Delegate: 1
+Conditions: topic == "t1" && location == "l1" -> "authorized";
