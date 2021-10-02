@@ -2,14 +2,14 @@
  * gcc hks.c -o ks -lmosquitto -lssl -lcrypto
 
  * The implementation subscriber on a Linux machine
- *
- * @download: apt install libmosquitto-dev to download the mqtt client c library
+ * 
+ * @download: apt install libmosquitto-dev to download the mqtt client c library 
  *            apt install libssl-dev to download openssl c library
  *
  * @compile: gcc KeyStore.c -o ks -lmosquitto -lssl -lcrypto
  *
  * @functions:
- *    mosquitto_connect()
+ *    mosquitto_connect() 
  *    mosquitto_disconnect()
  *    mosquitto_subscribe()
  *    mosquitto_unsubscribe()
@@ -30,7 +30,7 @@ bool FLAG_ACK_TOPIC = false;
 #define TIMEOUT     10000L
 
 
-int id ;
+int id ; 
 
 
 
@@ -40,21 +40,25 @@ const int mqttPort = 1883;
 const char* base_topic = "MK/";
 const char* mqttConnTopic = "iot_data";
 const char* Credtopic = "CR";
-char * subname = "sub1";
+char * subname = "sub1"; 
 
 #define MSG_MAX 5120
 
 
-unsigned char * session_key  = NULL;
+unsigned char * session_key  = NULL; 
+
+int KSids[KSN_NUM] = {1,2,3}; 
+int KSports[KSN_NUM] = {3331,3332,3333}; 
+char * KSnames[KSN_NUM] = {"localhost", "localhost","localhoat"}; 
 
 
 
 int main(int argc, char* argv[]) {
-
+  
     int rc = 0;
-
-    /**
-     *Start Mosquitto Client
+    
+    /** 
+     *Start Mosquitto Client 
      */
     printf("Startin Subscriber \n", id);
 
@@ -63,12 +67,12 @@ int main(int argc, char* argv[]) {
 
     mosquitto_lib_init();
     mosq = mosquitto_new(subname, true, 0);
-
+    
     if (mosq) {
         mosquitto_message_callback_set(mosq, KsCallback);
-
+        
         rc = mosquitto_connect(mosq, mqttServer, mqttPort, 60);
-
+        
         if (rc) {
             printf("Error: %s \n", mosquitto_strerror(rc));
             mosquitto_destroy(mosq);
@@ -89,7 +93,7 @@ int main(int argc, char* argv[]) {
 
             rc = mosquitto_loop(mosq, 0, 1);
         }
-
+        
         mosquitto_destroy(mosq);
     }
 
@@ -102,63 +106,66 @@ int main(int argc, char* argv[]) {
 void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *msg) {
 
     printf("Receive message under topic: %s \n", msg->topic);
-    printf("Received message length: %d \n", msg->payloadlen);
-
+    printf("Received message length: %d \n", msg->payloadlen); 
+    
     int rc = 0;
+  
+  
+    
      if (!strcmp(msg->topic, mqttConnTopic))
      {
-
+        
          int rc = 0;
         //BIO_dump_fp(stdout, msg->payload, msg->payloadlen);
-        unsigned char  RTAG [16];
-        unsigned char  RIV [16];
-        int msglen;
-        unsigned char  RCT [MSG_MAX];
-        unsigned char  plain [MSG_MAX];
-
-        memcpy(RTAG, msg->payload, 16);
-        memcpy(RIV, msg->payload+16, 16);
-        memcpy(&msglen, msg->payload+32, sizeof(int));
-        memcpy(RCT, msg->payload+32+ sizeof(int),msglen);
-
+        unsigned char  RTAG [16]; 
+        unsigned char  RIV [16]; 
+        int msglen; 
+        unsigned char  RCT [MSG_MAX]; 
+        unsigned char  plain [MSG_MAX]; 
+    
+        memcpy(RTAG, msg->payload, 16); 
+        memcpy(RIV, msg->payload+16, 16); 
+        memcpy(&msglen, msg->payload+32, sizeof(int)); 
+        memcpy(RCT, msg->payload+32+ sizeof(int),msglen); 
+    
         const char *aad = "";
         //BIO_dump_fp(stdout, RCT, msglen);
-
+    
         //unsigned char * key = ReadShare();
-
+    
         if(session_key != NULL)
         {
             unsigned char * key = ReadShare();
-            printf("Key:\n");
-            PrintHEX(key, BLOCK_SIZE);
-            int res =   aes_gcm_decrypt(RCT, 16,(unsigned char *)aad, strlen(aad),RTAG, key, RIV, 16, plain);
-            printf(" res = %d \n", res);
+            printf("Key:\n"); 
+            PrintHEX(key, BLOCK_SIZE); 
+            int res =   aes_gcm_decrypt(RCT, 16,(unsigned char *)aad, strlen(aad),RTAG, key, RIV, 16, plain); 
+            printf(" res = %d \n", res); 
             if (res >0)
             {
-                printf("plain text:\n");
+                printf("plain text:\n"); 
                 BIO_dump_fp(stdout, plain, res);
             }
-            else
-                handleErrors();
-
+            else 
+                handleErrors(); 
+         
         }
     }
 
     if (!strcmp(msg->topic, Credtopic))
      {
-         session_key = ReadShare();
+         //session_key = ReadShare();
+         session_key = CombineShares(); 
          PrintHEX (session_key, BLOCK_SIZE) ;
-
     }
 
 }
 
-
+	
 void handleErrors()
 {
-    printf("Error");
+    printf("Error"); 
 }
-
+	
 int aes_gcm_encrypt(unsigned char *plaintext, int plaintext_len,
                 unsigned char *aad, int aad_len,
                 unsigned char key[],
@@ -224,6 +231,9 @@ int aes_gcm_encrypt(unsigned char *plaintext, int plaintext_len,
     return ciphertext_len;
 }
 
+
+
+              
 
 int aes_gcm_decrypt(unsigned char *ciphertext, int ciphertext_len,
                 unsigned char *aad, int aad_len,
@@ -291,60 +301,79 @@ int aes_gcm_decrypt(unsigned char *ciphertext, int ciphertext_len,
     }
 }
 
+unsigned char * CombineShares()
+{
+    int ksid = 0; 
+    char * strshares = (char * )malloc(1024); 
+    memset(strshares, '\0', 1024); 
+    for (; ksid <SSS_T; ksid++)
+    {
+        int len = 0; 
+        char * share = GetShares(KSnames[ksid],KSports[ksid], &len); 
+        if (len>0)
+            #ifdef DBG
+            printf("share[%d]=<%s>\n", ksid, share); 
+            sprintf(strshares+ ksid * len, "%s", share);
+            #endif
+    }
+    char *  result = extract_secret_from_share_strings(strshares) ; 
+    #ifdef DBG 
+        printf(" Combined Key = "); 
+        PrintHEX (result, BLOCK_SIZE);
+    #endif
+    return result ; 
+}
+
 unsigned char * ReadShare()
 {
-    int i = 0 ;
-    int lenght  =KSN_NUM *(SSS_SIZE +2);
-    int sharlenght = SSS_SIZE+1 ;
-    char *  strshares = (char *) malloc (1024);
-    memset(strshares, '\0', 1024) ;
-
+    int i = 0 ; 
+    int lenght  =KSN_NUM *(SSS_SIZE +2); 
+    int sharlenght = SSS_SIZE+1 ; 
+    char *  strshares = (char *) malloc (1024); 
+    memset(strshares, '\0', 1024) ; 
+    
 
     for (; i<SSS_T;i++)
     {
-        char name[5];
+        char name[5]; 
         sprintf(name, "%d.txt", i+1);
-        char path [124] ="/home/pi/Desktop/SSSS/" ;
-        strcat(path,name);
+        char path [124] ="/home/pi/Desktop/SSSS/" ; 
+        strcat(path,name); 
         FILE *fptr;
         fptr = fopen(path,"r");
         if (fptr == NULL)
             exit(EXIT_FAILURE);
-
-        char * line ;
-        int len = 0 ;
-        int read = getline(&line, &len, fptr);
+        
+        char * line ;  
+        int len = 0 ; 
+        int read = getline(&line, &len, fptr); 
         if (read != -1)
         {
             //printf("Retrieved line of length %zu :\n", read);
             //printf("%s", line);
         }
-
+        
         char * token = strtok(line, "|");
-
-        int index = 0 ;
+        
+        int index = 0 ; 
         for (; index<3;index++)
             token = strtok(NULL, "|");
-        //printf("%s\n", token);
-
-        //memcpy(shares[i],(unsigned char *)token, SSS_SIZE);
-        sprintf(strshares + (i * strlen(token)), "%s\n", token);
-        //PrintHEX(shares[i], SSS_SIZE);
-        // printf  ("%s", strshares);
-
-
+        //printf("%s\n", token); 
+        sprintf(strshares + (i * strlen(token)), "%s\n", token); 
+        //PrintHEX(shares[i], SSS_SIZE); 
+        // printf  ("%s", strshares); 
         free(line);
-        fclose(fptr);
+        fclose(fptr); 
     }
-
-    char *  result = extract_secret_from_share_strings(strshares);
+    
+    char *  result = extract_secret_from_share_strings(strshares); 
     //PrintHEX (result, BLOCK_SIZE) ;
-    return result;
-
+    return result; 
+ 
 }
 
 
-
+     
 void PrintHEX(unsigned char* str, int len) {
 
     for (int i = 0; i < len; ++i) {
@@ -353,3 +382,199 @@ void PrintHEX(unsigned char* str, int len) {
 
     printf("\n");
 }
+
+void PrintChar( const char * buf, int len) 
+{
+    printf("---------------------------------------------------------------------------\n"); 
+    for (int i =0 ; i < len; i++)
+        printf("%c",buf[i]); 
+    printf("\n----------------------------------------------------------------------------\n"); 
+    }
+
+
+char * GetShares(char * srv_hostname, int port, int * len) 
+{ 
+    char * topic= "t1"; 
+	char * lication = "l1"; 
+	int sock;
+	struct sockaddr_in server;
+	struct hostent *hp;
+	//char *srv_hostname;
+	int plen;
+    
+	char pbuf[100] ={'0'};
+    
+	//srv_hostname = ksname; 
+	/* Create socket */
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock < 0) {
+        #ifdef DBG
+	      perror("opening stream socket\n");
+        #endif
+	     *len = -1; 
+         return NULL ; 
+	}
+
+	/* Connect socket using name specified by command line. */
+	server.sin_family = AF_INET;
+	hp = gethostbyname(srv_hostname);
+	if (hp == 0) {
+        #ifdef DBG
+	      fprintf(stderr, "%s: unknown host\n", srv_hostname);
+        #endif
+        *len = -1; 
+        return NULL;   
+	}
+
+	memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
+	server.sin_port = htons(port);
+    printf(" Connecting  to %s:%d .......\n", srv_hostname,port); 
+	if (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
+	      perror("connecting stream socket");
+          *len = -1;
+          return NULL ; 
+	}
+    
+    /*
+    * *************************************************************
+    *  Totla_len |c|cr_len|cr|.......|k|pk_l|PK|r|R_l|R | s_l | S *
+    * *************************************************************
+    */
+ 
+    /* load Credentials */ 
+       
+    int cr1_len ; 
+    char * cr1= getCredentials(CR1,&cr1_len);
+       
+    int cr2_len ; 
+    char*  cr2= getCredentials(CR2,&cr2_len); 
+       
+    #ifdef DBG
+        printf(" credential 1 length = %d \n", cr1_len);
+        //PrintChar(cr1, cr1_len); 
+        
+        printf(" credential 2 length = %d \n", cr2_len);
+       // PrintChar(cr2, cr2_len); 
+    #endif
+        
+    int pk_l ;
+    char * pk = getpk(&pk_l);
+       
+    #ifdef DBG    
+        printf(" pk length = %d \n", pk_l);
+        //PrintChar(pk, pk_l);  
+    #endif
+          
+    char * asrt = "topic=\"t1\"\n"\
+        "location=\"l1\"\n";  
+        
+    int asrt_l = strlen(asrt); 
+        
+    #ifdef DBG
+        PrintChar(asrt, asrt_l); 
+    #endif
+    
+    /* calculate the whole len of the message */
+    int cr_l = cr1_len + cr2_len; 
+    int msg_l = sizeof (int)  + cr_l  +  sizeof(int) *2 + asrt_l+ sizeof (int)+  pk_l +  +sizeof (int); 
+        
+        
+
+        
+    char *  msg= (char *)malloc(msg_l); 
+    memset(msg,0,msg_l);
+    memcpy(msg, &msg_l, sizeof(int));  // total length
+    memcpy(msg+sizeof(int), &cr1_len, sizeof(int));  
+    memcpy(msg+2*sizeof(int), cr1, cr1_len); 
+    memcpy(msg+2*sizeof(int)+ cr1_len, &cr2_len, sizeof (int) ); 
+    memcpy(msg+3*sizeof(int)+ cr1_len, cr2, cr2_len); 
+    memcpy(msg+3*sizeof(int)+ cr_l, &pk_l, sizeof (int) ); 
+    memcpy(msg+3*sizeof(int)+ cr_l+ sizeof(int), pk, pk_l ); 
+    memcpy(msg+3*sizeof(int)+ cr_l+ sizeof(int) + pk_l , &asrt_l, sizeof (int) ); 
+    memcpy(msg+3*sizeof(int)+ cr_l+ sizeof(int) + pk_l + sizeof(int) , asrt, asrt_l); 
+          
+    #ifdef DBG
+        printf(" Totla Message size = %d \n" , msg_l);
+    #endif
+    
+    int  sent =  0 ;
+       int remin = msg_l ; 
+     while (remin >0 )
+     {
+        int s = write( sock, msg+sent , remin); 
+        #ifdef DBG
+            printf(" sent %d \n" , s );
+        #endif
+        sent += s; 
+        remin -=s ; 
+     }
+     
+    int re = 0; 
+    char *  share = malloc (1024); 
+    int result = read(sock, share, 1024);
+    #ifdef DBG
+        printf("result=<%s><%d>" ,  share, result ); 
+    #endif
+    
+    close(sock);
+    *len = result; 
+    return share;
+}
+
+
+
+
+/*
+ * Read Credentials 
+ * 
+ */ 
+char* getCredentials( char * path, int * len)
+{
+    FILE *fp;
+    long cre_Size;
+    char *result;
+    fp= fopen(path,"r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Credential file is missing ");
+        exit(1);
+    }
+    fseek(fp,0,SEEK_END);
+    cre_Size = ftell(fp);
+    printf(" Credentials Size %d\n",cre_Size);
+    rewind(fp);
+    result = malloc(cre_Size+1);
+    fread(result,cre_Size,1,fp);
+    fclose(fp);
+    result[cre_Size]='\0';
+    *len =cre_Size;
+    return result;
+}
+/* 
+ * Get publick key 
+ */ 
+
+char* getpk(int * len)
+{
+    FILE *fp;
+    long pol_Size;
+    char *result;
+    fp= fopen(SUBPK,"r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Policy file is missing ");
+        exit(1);
+    }
+    fseek(fp,0,SEEK_END);
+    pol_Size = ftell(fp);
+    rewind(fp);
+    result = malloc(pol_Size+1);
+    fread(result,pol_Size,1,fp);
+    fclose(fp);
+    //result[pol_Size]='\0';
+    *len =pol_Size;
+    return result;
+}
+
+
+

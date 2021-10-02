@@ -26,6 +26,10 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
 void PrintHEX(unsigned char* str, int len);
 
 unsigned char *  ReadShare(); 
+char *  getpk( int * len); 
+char *  getCredentials(char * name, int *len);
+char *  GetShares(char * host , int port , int * re); 
+unsigned char * CombineShares(); 
 
 #endif /* end of SUB_H_ */
 

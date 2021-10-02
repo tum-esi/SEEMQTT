@@ -14,11 +14,11 @@
 
 #include <regex.h>
 
+#include "config.h"
 
 
 
-
-#define SRV_PORT 3333
+//#define SRV_PORT 3333
 #define TRUE 1
 #define QLEN 20
 #define MAXVAR  10  
@@ -26,14 +26,10 @@
 
 
 int varpair = 0; 
-char * varlist[MAXVAR] ; 
+char * varlist[MAXVAR] ;
+ 
 char* getPolicy();
 
-
-
-void sigverusage(void);
-void print_region(FILE *fd_out, char *vp_msg, char *vp_s, char *vp_e);
-char* getAuthKey(char *vp_s, char *vp_e);
 char* ReadShare();
 
 
@@ -124,7 +120,9 @@ void Evaluate(int msgsock)
   	 * Execute by passing the name directly 
   	 */
 
-	char * output = "tmpoutput.txt";  
+	char *  output [12] = {'\0'}; 
+    sprintf(output, "output%d.txt",msgsock); 
+    // char * output = "tmpoutput.txt";  
 	char * cmdkn = "../KeyNote/keynote verify  -r unauthorixed,authorized -e assrt -l Policy -k sub cred1 cred2 >>";
 	char* CMD = (char *)malloc(strlen(cmdkn)+strlen(output)+1);
     memset(CMD,'\0', strlen(cmdkn)+strlen(output)+1); 
@@ -132,23 +130,32 @@ void Evaluate(int msgsock)
 	strncpy(CMD+ strlen(cmdkn), output, strlen(output)); 
 
   	system (CMD);
-    printf(" the output file :%s\n", CMD);
-    printf(" the output file :%s\n", output);
 	int result = IsAuthorized(output); 
+    #ifdef DBG
+        printf(" result = %d \n", result ); 
+    #endif
 
-	if (result)
+	if (result == 0)
 	{
-	
-	// send the key (part) 
-    char * share = ReadShare(); 
-    printf("share %s\n",share); 
-    int w = write(msgsock, share, strlen(share));
-    //int w = write(msgsock, &result, sizeof(result));
+        char * share = ReadShare(); 
+     
+        int w = write(msgsock, share, strlen(share));
+        #ifdef DBG
+            printf("DEBUG: share %s\n",share); 
+            printf("DEBUG:  %d sent to the requester\n", w); 
+        #endif
+        //int w = write(msgsock, &result, sizeof(result));
 	}
 	else 
 	{
-	// send error (request is not authorize)
-		
+         int sharlen = 39 ; 
+         char share[sharlen]; 
+         memset(share, '0', sharlen); 
+         int w = write(msgsock, share, strlen(share));
+        #ifdef DBG
+            printf("DEBUG: share %s\n",share); 
+            printf("DEBUG:  %d sent to the requester\n", w); 
+        #endif
 	}
 	
 	//clean 
@@ -222,12 +229,40 @@ int IsAuthorized(char *output)
     result[pol_Size]='\0'; 
     char * token = strtok(result, "=");
     token = strtok(NULL, "=");
-    printf(" token = %s \n", token);
-    if (strcmp(token, "authorized")==0)
-	return 0; 
+    #ifdef DBG
+        printf("<token==%s>\n", token);
+    #endif
+    
+    //if (strncmp(token, "authorized",strlen("authorized"))==0)
+    if (memcmp(" authorized\n",token, strlen(" authorized\n"))==0)  
+        return 0; 
     else 
-	return -1; 
+        return -1; 
 }
+/* 
+* getPolicy: Read the local policy" 
+*/ 
+char* getPolicy()
+{
+    FILE *fp;
+    long pol_Size;
+    char *result;
+    fp= fopen("Policy","r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Policy file is missing ");
+        exit(1);
+    }
+    fseek(fp,0,SEEK_END);
+    pol_Size = ftell(fp);
+    rewind(fp);
+    result = malloc(pol_Size+1);
+    fread(result,pol_Size,1,fp);
+    fclose(fp);
+    result[pol_Size]='\0';
+    return result;
+}
+
 
 int
 main(int argc, char **argv)
@@ -237,8 +272,11 @@ main(int argc, char **argv)
       int msgsock;
       int i;
 
-	/* Get KS number */
-	ksid = atoi(argv[1]);
+	  /* Get KS number */
+	  ksid = atoi(argv[1]);
+      
+      /* Get the port number */
+      int SRV_PORT = atoi(argv[2]); 
  
       /* Create socket */
       sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -279,87 +317,5 @@ main(int argc, char **argv)
  * never explicitly closed.  However, all sockets will be closed
  * automatically when a process is killed or terminates normally.
  */
-}
-char* getPolicy()
-{
-    FILE *fp;
-    long pol_Size;
-    char *result;
-    fp= fopen("Policy","r");
-    if (fp == NULL)
-    {
-        fprintf(stderr, "Policy file is missing ");
-        exit(1);
-    }
-    fseek(fp,0,SEEK_END);
-    pol_Size = ftell(fp);
-    rewind(fp);
-    result = malloc(pol_Size+1);
-    fread(result,pol_Size,1,fp);
-    fclose(fp);
-    result[pol_Size]='\0';
-    return result;
-}
-
-
-
-void sigverusage(void)
-{
-    fprintf(stderr, "Arguments:\n");
-    fprintf(stderr, "\t<AssertionFile>\n");
-}
-
-
-
-
-
-/*
- * print_region -- print a range of characters located inside a string
- *	Routine receives the file descriptor that it should print its
- *	output, an informative message to print before the data, and
- *	beginning and end pointers for the data to be printed.
- */
-
-void print_region(FILE *fd_out, char *vp_msg, char *vp_s, char *vp_e)
-{
-    char c;
-    
-    if ((vp_s == NULL) || (vp_e ==NULL) || (vp_s == vp_e))
-    {
-        printf("%s = <<NULL>>\n", vp_msg);
-        return;
-    }
-    c = *vp_e;	// save char at end of string
-    *vp_e = '\0';	// zero terminate string
-    fprintf(fd_out, "%s = <<%s>>\n", vp_msg, vp_s);
-    *vp_e = c;	// restore value that was zeroed
-}
-char* getAuthKey( char *vp_s, char *vp_e)
-{
-    char c;
-    char result[30000];
-    if ((vp_s == NULL) || (vp_e ==NULL) || (vp_s == vp_e))
-    {
-        printf("auth key = <<NULL>>\n");
-        return NULL;
-    }
-    int i=0;
-    while (vp_s != vp_e)
-    {
-        c = *vp_s;
-        
-        if(c=='\\' ||c=='\n' || c=='"' || c==' ')
-        {
-            
-        }
-        else
-        {
-            result[i]=c;
-            i++;
-        }
-        vp_s++;
-        
-    }
-    return result;
 }
 
