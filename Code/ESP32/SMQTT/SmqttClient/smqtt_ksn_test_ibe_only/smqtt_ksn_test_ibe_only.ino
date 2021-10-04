@@ -70,22 +70,6 @@ const unsigned char iot_pr_key[]= \
 "H3JAp8zyNQe3mFnp64DI3y0wB95+lU0EULtL95DhYvk=\n" \
 "-----END RSA PRIVATE KEY-----\n";
 
-
-unsigned char iotpk[] = "KeyNote-Version: 2\nAuthorizer: \"rsa-hex:30818902818100c5465a29ab554d22b5eac414a0\\\n" \
-"            4e75c5e37690c2759e7bba9c33596d5010bd8e5c8be2c1b59\\\n" \
-"            c939152ce952beb6ca678878c0a0735216e76c00b9ef1fb43\\\n" \
-"            434eeebdd4f1b195109cde01e6e24e23cd49ea66fe8dd30e4\\\n" \
-"            ac18ba4ca411229a7d1bc473d072bfd602f0b9bed74e255b8\\\n" \
-"            9c374e8f3a3dc0de1bc7b49ff9708f4a470203010001\"\n" ;
-unsigned char capk[]  = "Licensees:  \"rsa-hex:30818902818100ca4487e0d985cf784c60dd1b06\\\n" \
-"            88f37d6f87fb8ced72a44f64c18e732a4a3b31dedb80df96f\\\n" \
-"            2e341fd4fbeed89e86bdd87c8982a6cbeb80e6f433f1a8e89\\\n" \
-"            e8f285ef8c4f5271aa9512635c2cc3bd37d758fcdf47aeb85\\\n" \
-"            8a89cb0e6597de08665dd82300a20fd8e7e8b529eeadebc88\\\n" \
-"            0a885761d12f8dcf03c54cf95ea67418050203010001\"\n Delegate: 0\n" ;
-unsigned char Conditions[] ="topic == \"t1\" && location == \"l1\" -> \"authorized\";\n Signature: " ;
-
-
 const unsigned char cr[] = \
 "KeyNote-Version: 2\n"\
 "Authorizer: \"rsa-hex:30818902818100c5465a29ab554d22b5eac414a0\\\n" \
@@ -128,6 +112,9 @@ void bufferSize(char* text, int &length)
   length = (buf <= i) ? buf + BLOCK_SIZE : buf;
 }
 
+/*
+* rand_string:  fill a memeory with ranom values
+*/
 static uint8_t  *rand_string(uint8_t  *str, size_t size) {
   const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXZY";
   if (size) {
@@ -140,6 +127,9 @@ static uint8_t  *rand_string(uint8_t  *str, size_t size) {
   return str;
 }
 
+/*
+Allocate memory and fill it with random value. size determines the size of the required memeory
+*/
 uint8_t* rand_string_alloc(size_t size) {
   uint8_t* s =(uint8_t  *) malloc(size);
   if (s) {
@@ -180,7 +170,6 @@ void setup_wifi() {
 
 
 void reconnect() {
-
     // Loop until we're reconnected
     while (!mqttclient.connected()) {
         Serial.print("Attempting MQTT connection...");
@@ -243,7 +232,6 @@ void setup() {
 
   mqttclient.secmqtt_set_iot_credential(cr, (int) sizeof(cr));
 
-
   /*
    * 1. connection to Key Store will be done only once during setup
    * 2. session key will be updated once during setup
@@ -261,7 +249,6 @@ void setup() {
      tks2 = tack2 + tdec + tcmp done
      tks3 = tack3 + tdec + tcmp done
   */
-
   Serial.printf("time connect: \t\t%lu (us)\n", mqttclient.time_info.t_connect);
   Serial.printf("time enc: \t\t%lu (us)\n", mqttclient.time_info.t_enc);
   Serial.printf("time send: \t\t%lu (us)\n", mqttclient.time_info.t_send_pk);
@@ -270,7 +257,6 @@ void setup() {
   for (int i = 0; i < KSN_NUM; i++) {
     Serial.printf("time receive ack%d: \t%lu (us)\n", i+1, mqttclient.time_info.t_recv[i]);
   }
-
   Serial.printf("time dec: \t\t%lu (us)\n", mqttclient.time_info.t_dec);
   Serial.printf("time phase 2: \t\t%lu (us)\n", mqttclient.time_info.t_p2);
   Serial.printf("time phase 1+2: \t\t%lu (us)\n", mqttclient.time_info.t_p2+mqttclient.time_info.t_p11 + mqttclient.time_info.t_connect);
@@ -289,8 +275,8 @@ void loop() {
 
     if(mqttclient.get_state() == SECMQTT_KS_CONNECTED) {
         Serial.printf("test %d\n", test_times);
-        char * txt = "Hello world hii"; 
-        int len = 16 ; 
+        char * txt = "Hello world hii";
+        int len = 16 ;
         //mqttclient.SecPublish(topic, mymsg, Size_Byte);
         mqttclient.SecPublish(topic, (unsigned char *) txt, len);
         test_times += 1;
