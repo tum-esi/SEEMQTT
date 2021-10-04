@@ -52,41 +52,47 @@ const unsigned char iot_pk_key[]= \
 "TRJ6ws37emQfS8IM7XRlYaIQmmOacDvFFjrWBd0pYKXnP8ZnBSPVmKHu8as+mz0i\n" \
 "7BnKdUGhRn9atFzZDQIDAQAB\n" \
 "-----END PUBLIC KEY-----\n";
+/*"-----BEGIN RSA PUBLIC KEY-----\n" \
+"MIGJAoGBAKh86vqrlRTyJ/uxKx0uhdNkIxdfaXhA5NFpN0OJk5wNCSsZcPv/vowO\n" \
+"P4wD5qAnnpC7SJquUjQE6Ku9yZP8t31bU5AFVZ7v8jBJ4P0qCp3y34JMCuNsY6+3\n" \
+"HnZAuJpdN9Y2Szt6LGaRoMHrQL/FV+MJP8TiZ3+K1CrSnbZOjJzfAgMBAAE=\n" \
+"-----END RSA PUBLIC KEY-----\n";
+*/
 
 const unsigned char iot_pr_key[]= \
 "-----BEGIN RSA PRIVATE KEY-----\n" \
-"MIICXAIBAAKBgQC007GfgttefDhYI5Mcv7IrPlWp62tCsqBdcfP/UqneljzLl0uk\n" \
-"+1sSMCvR7oCtL+kZcCDbkbv4CjFCKkuhwebZ7YNMTRJ6ws37emQfS8IM7XRlYaIQ\n" \
-"mmOacDvFFjrWBd0pYKXnP8ZnBSPVmKHu8as+mz0i7BnKdUGhRn9atFzZDQIDAQAB\n" \
-"AoGAU75CYXwJug1PTspS5BqHGe3JYGMNjpsJF52hgVo4H0R2rVbJCoP53kd+079f\n" \
-"ylUI3+YE4YrxgWK/A0RxOF2DWhusL0MAUdg2sSDf9htfiCbflBD0scYFXCLQOr+9\n" \
-"3GNoNIv5nPIzuqDCTbr7leAQTJfYGoz5rlcfd7s99astOkECQQDsn8fyi12I2sHc\n" \
-"LkA5DngTq/z3M0cTRxhU0Bh1Hge2H2eJTZRjaD5GXnEjZvFmDU/7luUJYUzxyTYY\n" \
-"IgH68Hy9AkEAw6JEYjlFqFaXPOHcyNEoRsk8J5cXGofwY4ABaifYg+EU9o9vs0+I\n" \
-"8DCzyrRZbU0jt/GX8zvXJEuhxck5+pcakQJBAOv5aEBUhcHuTvhSU4/TAyKzGQI5\n" \
-"a/8onnYuVMWvXgddCDbgXERKeBhbJL8mcUTRr9r6H40cMMzLWZv1hj4HyI0CQD50\n" \
-"PRSGaCB3lEyRZmSNsSf38kZJS8zifPGm2czD77EaWBDmdahuya60PZGGxc3JBJAi\n" \
-"hnnWLradloWH2gSP3KECQB2GGMO2Lpjvn1d2Zcpf/r4TpYYa5LbQ9sBIUyj+Obvs\n" \
-"H3JAp8zyNQe3mFnp64DI3y0wB95+lU0EULtL95DhYvk=\n" \
+"MIICXAIBAAKBgQCofOr6q5UU8if7sSsdLoXTZCMXX2l4QOTRaTdDiZOcDQkrGXD7\n" \
+"/76MDj+MA+agJ56Qu0iarlI0BOirvcmT/Ld9W1OQBVWe7/IwSeD9Kgqd8t+CTArj\n" \
+"bGOvtx52QLiaXTfWNks7eixmkaDB60C/xVfjCT/E4md/itQq0p22Toyc3wIDAQAB\n" \
+"AoGAbGtV2dAnsr7Qs8mh8LlLLGg3nIatG9DGbWrDQRZ6geRxjeZlKgO73ewdQEAS\n" \
+"W+SiyId7hO2/v/GYt0r9N9lbSKeXw23el7fbyrt6aytK9oolzhojUhi4blZsTd39\n" \
+"DVWSPII/0718BYGzD+UPU0PfMKKLu00EWvrVuxcBSYyGtcECQQDbX0jWAMBCTnaF\n" \
+"kAFTBZ6HY78A0ZTbl3q44bKccs2KvmdO1CPIAgvrbQJekurLQ6/wx1DfbUBb9JmI\n" \
+"VcrmqjPZAkEAxJ6q2cBOT08Qh3W62inF6hwE848XkVc/qN8ud2gv04VkMWy2V+mZ\n" \
+"9wgnOxkOoEVd2ESZ1nKDXtlpokyUB6e7dwJAZmrc8XSWTh6dvQuXYrBb6+/Iq9Qt\n" \
+"QDw/gnN01Q/QIHd2edoW/njeIcLZ+Vd0IQPv72TOwBEcnBHdYEZVnU1XOQJACmFm\n" \
+"G8DvYXiHIt+wUbxK2qVIDaPMVrwIfF3sEhnKDJzKQWG/7rxCiKxBhfk4sHV5EuXs\n" \
+"SUoabXOFBDCO0Cim2QJBAJ+GFjpE2IASX6x4mlpBlYEuqHVlP+h7gjHPqtg7amuE\n" \
+"n2O9KxEK8KmZoyxan7lmvdDa/fwEIQ6MEG7On40ckas=\n" \
 "-----END RSA PRIVATE KEY-----\n";
 
+
 const unsigned char cr[] = \
-"KeyNote-Version: 2\n"\
-"Authorizer: \"rsa-hex:30818902818100c5465a29ab554d22b5eac414a0\\\n" \
-"            4e75c5e37690c2759e7bba9c33596d5010bd8e5c8be2c1b59\\\n" \
-"            c939152ce952beb6ca678878c0a0735216e76c00b9ef1fb43\\\n" \
-"            434eeebdd4f1b195109cde01e6e24e23cd49ea66fe8dd30e4\\\n" \
-"            ac18ba4ca411229a7d1bc473d072bfd602f0b9bed74e255b8\\\n" \
-"            9c374e8f3a3dc0de1bc7b49ff9708f4a470203010001\"\n" \
-"Licensees:  \"rsa-hex:30818902818100ca4487e0d985cf784c60dd1b06\\\n" \
-"            88f37d6f87fb8ced72a44f64c18e732a4a3b31dedb80df96f\\\n" \
-"            2e341fd4fbeed89e86bdd87c8982a6cbeb80e6f433f1a8e89\\\n" \
-"            e8f285ef8c4f5271aa9512635c2cc3bd37d758fcdf47aeb85\\\n" \
-"            8a89cb0e6597de08665dd82300a20fd8e7e8b529eeadebc88\\\n" \
-"            0a885761d12f8dcf03c54cf95ea67418050203010001\"\n" \
+"Authorizer: \"rsa-hex:30818902818100a87ceafaab9514f227fbb12b1d\\\n" \
+"            2e85d36423175f697840e4d169374389939c0d092b1970fbf\\\n" \
+"            fbe8c0e3f8c03e6a0279e90bb489aae523404e8abbdc993fc\\\n" \
+"            b77d5b539005559eeff23049e0fd2a0a9df2df824c0ae36c6\\\n" \
+"            3afb71e7640b89a5d37d6364b3b7a2c6691a0c1eb40bfc557\\\n" \
+"            e3093fc4e2677f8ad42ad29db64e8c9cdf0203010001\"\n" \
+"Licensees: \"rsa-hex:30818902818100f111cf4d75b5f36bdedd5968d5\\\n" \
+"            9be24cb959bc74eb61a1006d2e02425264c5f5b7334eba322\\\n" \
+"            ee6a9f40268967c9e390820e415b3de75c6b48280b037b36a\\\n" \
+"            48a9b16051b2f88273b6e0f90fc528ad94164b968cd077249\\\n" \
+"            6fb40b86501846adfe4d21fc2ab45f7f50742e2f513519d0b\\\n" \
+"            095740e13261f92b3742ad056b71cb20d30203010001\"\n"\
 "Delegate: 1\n"\
-"Conditions: topic == \"t1\" && location == \"l1\" -> \"authorized\";\n"\
-"Signature: ";
+"Conditions: topic == \"car_loc\" && location == \"munich\" -> \"authorized\";\n"\
+"signature:";
 
 WiFiClient espClient;
 SecMqtt mqttclient(espClient);

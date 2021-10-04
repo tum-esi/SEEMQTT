@@ -94,9 +94,9 @@ void SecMqtt::SecConnect(const char *client_id) {
             memcpy(keync[i] + BLOCK_SIZE, ksn_list[i].nonce, BLOCK_SIZE);
 
             #ifdef DBG_MSG
-            Serial.println("KS[%d]. masterkey: ");
+            Serial.printf("KS[%d]. masterkey: ", i);
             PrintHEX (ksn_list[i].masterkey, BLOCK_SIZE);
-            Serial.println("KS[%d]. nonce: ");
+            Serial.printf("KS[%d]. nonce: ", i);
             PrintHEX (ksn_list[i].nonce, BLOCK_SIZE);
             #endif
         }
