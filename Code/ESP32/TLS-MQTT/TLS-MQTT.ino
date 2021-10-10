@@ -11,9 +11,9 @@
 #define TLS_DEBUG
 #define TIME_DEBUG
 #define RECON
-const char* ssid = "mhhap";
-const char* password = "mhh1986mhh>>";
-const char* mqtt_server =  "192.168.0.110"; 
+const char* ssid = "TP-Link_904A";
+const char* password = "30576988";
+const char* mqtt_server =  "192.168.0.110";
 const int mqttPort = 8883; //1883
 
 
@@ -46,7 +46,7 @@ const char* ca_cert = \
 
 
 
-WiFiClientSecure espClient; 
+WiFiClientSecure espClient;
 PubSubClient mqttClient(espClient);
 String clientId = "ESP32Client-"; /* MQTT client ID (will add random hex suffix during setup) */
 
@@ -58,11 +58,11 @@ char msg[MSG_BUFFER_SIZE];
 int value = 0;
 
 
-char * mymsg; 
+char * mymsg;
 
 
 
-void setup() 
+void setup()
 {
 
 
@@ -81,10 +81,10 @@ void setup()
   /*  Connect to local WiFi access point */
  // WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
- 
+
 #ifdef SERIAL_DEBUG
   Serial.print("Connecting");
- 
+
 #endif
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -112,7 +112,7 @@ void setup()
 #endif
 
  espClient.setCACert(ca_cert);
-                                             
+
 #ifdef TLS_DEBUG
   /* Call verifytls to verify connection can be done securely and validated - this is optional but was useful during debug */
   verifytls();
@@ -122,7 +122,7 @@ void setup()
   mqttClient.setServer(mqtt_server, mqttPort);
 
   /* Add random hex client ID suffix once during each reboot */
-  clientId += String(random(0xffff), HEX); 
+  clientId += String(random(0xffff), HEX);
   mymsg = rand_string_alloc(Size_Byte);
 }
 
@@ -133,20 +133,19 @@ void reconnect() {
   while (!mqttClient.connected()) {
 
       Serial.print("Attempting MQTT broker connection...");
-      
+
       unsigned long b_mssl= millis();
     /* Attempt to connect */
-      if (mqttClient.connect(clientId.c_str())) {
-      
+     if (mqttClient.connect(clientId.c_str())) {
+      //if (mqttClient.connect(clientId.c_str(), NULL, NULL, NULL,0,0,NULL,0)) {
       unsigned long e_mssl = millis();
-      
       Serial.println("connected");
        #ifdef TIME_DEBUG
       Serial.print("time to estiblsh SSL:");
       Serial.println(e_mssl - b_mssl);
       #endif
-     
-    } 
+
+    }
     else {
 
       Serial.print("Failed, rc=");
@@ -211,42 +210,42 @@ bool verifytls() {
 }
 
 
-void loop() 
+void loop()
 {
   /* Main loop. Attempt to re-connect to MQTT broker if connection drops, and service the mqttClient task. */
   if(!mqttClient.connected()) {
     reconnect();
   }
-  
+
 
   unsigned long now = millis();
-  if (now - lastMsg > 10000) {
+  if (now - lastMsg > 30000) {
     lastMsg = now;
     ++value;
-    
+
     unsigned long b_msgsend = millis();
     /*
-     
-    mqttClient.beginPublish("mhh_my_topic", Size_Byte, true); 
-    mqttClient.write((byte *)mymsg, (int)Size_Byte); 
+
+    mqttClient.beginPublish("mhh_my_topic", Size_Byte, true);
+    mqttClient.write((byte *)mymsg, (int)Size_Byte);
     mqttClient.endPublish ();
     */
     mqttClient.publish("mhh_my_topic",mymsg);
    unsigned long e_msgsend = millis();
-   
+
    snprintf (msg, MSG_BUFFER_SIZE, "Message ID #%ld ", value );
     Serial.print("Publish message: ");
     Serial.println(msg);
     #ifdef TIME_DEBUG
-    char timemsg [50] ; 
+    char timemsg [50] ;
     snprintf (timemsg, MSG_BUFFER_SIZE, "time to publish %ld Byte in Ms:", Size_Byte );
-    Serial.print(timemsg); 
+    Serial.print(timemsg);
     Serial.println(e_msgsend - b_msgsend);
     #endif
    #ifdef RECON
-   mqttClient.disconnect(); 
+   mqttClient.disconnect();
    #endif
   }
- 
+
 mqttClient.loop();
 }

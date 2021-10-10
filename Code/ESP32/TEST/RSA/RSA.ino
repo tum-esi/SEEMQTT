@@ -127,7 +127,7 @@ void setup() {
     /* rsa decryption: maxBlock = keysize(1024)/8 */
     maxBlock = C_SIZE;
 
-    stime = micros();
+    stime = millis();
     
     mbedtls_pk_context pr;
     mbedtls_pk_init(&pr);
@@ -167,7 +167,7 @@ void setup() {
         mbedtls_pk_free(&pr);
     }
 
-    dectime = micros() - stime;
+    dectime = millis() - stime;
 
     // check m and plaintext, whether they are the same
     if (!memcmp(m, plaintext, MSG_SIZE)) {

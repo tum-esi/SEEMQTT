@@ -34,8 +34,8 @@ const unsigned char iot_pr_key[]= \
 "-----END RSA PRIVATE KEY-----\n";
 
 
-#define MSG_SIZE 120
-#define C_SIZE 128
+#define MSG_SIZE 100
+#define C_SIZE 256
 
 unsigned long stime, etime, enctime, dectime;
 
@@ -62,7 +62,7 @@ void setup() {
     
     int error_code;
 
-    stime = micros();
+    stime = millis();
     mbedtls_pk_context pk; 
     mbedtls_pk_init(&pk);
     error_code =  mbedtls_pk_parse_public_key(&pk, iot_pk_key, sizeof(iot_pk_key));
@@ -79,9 +79,9 @@ void setup() {
         }
     }
 
-    enctime = micros() - stime;
+    enctime = millis() - stime;
 
-    stime = micros();
+    stime = millis();
 
     mbedtls_pk_context pr;
     mbedtls_pk_init(&pr);
@@ -101,7 +101,7 @@ void setup() {
         }
     }
 
-    dectime = micros() - stime;
+    dectime = millis() - stime;
 
     if(!memcmp(m, plaintext, MSG_SIZE)) {
         Serial.println("m equal to plaintext");
@@ -110,11 +110,11 @@ void setup() {
     Serial.printf("time to enc: \t%lu (us)\n", enctime);
     Serial.printf("time to dec: \t%lu (us)\n", dectime);
 }
-void Compare(const unsigned char * t1, const unsigned char t2 , int len)
+int Compare(const unsigned char * t1, const unsigned char * t2 , int len)
 {
   int i = 0 ; 
   for (;i<len; i++){
-    if (t1[i]!=t2[i]){
+    if (memcmp((const void *)t1[i], (const void *)t2[i], 1)!=0){
       return -1; 
     }
   }
