@@ -37,16 +37,12 @@ void setup() {
         
 
         
-        int lenshares = strlen(shares); 
-        //Serial.printf("length is \n", lenshares);  
-        //Serial.printf("<<\n%s>>\n", shares);  
+        int lenshares = strlen(shares);  
         
         int len  = lenshares /n ; 
         char * colectedshare = (char *)malloc (t* len +1);
         memset(colectedshare, '\0', t* len +1); 
         memcpy(colectedshare, shares, t*len); 
-       // colectedshare[t* len +1] ='\0'; 
-       // Serial.printf("<<\n%s>>\n", colectedshare); 
 
 
         unsigned long start_j = micros();
