@@ -2,14 +2,14 @@
  * gcc hks.c -o ks -lmosquitto -lssl -lcrypto
 
  * The implementation of Key Store on a Linux machine
- * 
- * @download: apt install libmosquitto-dev to download the mqtt client c library 
+ *
+ * @download: apt install libmosquitto-dev to download the mqtt client c library
  *            apt install libssl-dev to download openssl c library
  *
  * @compile: gcc KeyStore.c -o ks -lmosquitto -lssl -lcrypto
  *
  * @functions:
- *    mosquitto_connect() 
+ *    mosquitto_connect()
  *    mosquitto_disconnect()
  *    mosquitto_subscribe()
  *    mosquitto_unsubscribe()
@@ -24,12 +24,12 @@
 
 static bool run = true;
 // KEy Sippliting (KSN), Shamir's Secret Sharing (SSS)
-enum SHARING_MODE {KSN, SSS}; 
+enum SHARING_MODE {KSN, SSS};
 // Public Key Encryption (PKE) (using rsa), Identoty Based Encryption (IBE)
-enum ENC_MODE {PKE, IBE}; 
+enum ENC_MODE {PKE, IBE};
 
-enum SHARING_MODE sharing_mode; 
-enum ENC_MODE enc_mode ; 
+enum SHARING_MODE sharing_mode;
+enum ENC_MODE enc_mode ;
 
 //bool ibe_mode = false;
 //bool rsa_mode = false;
@@ -43,9 +43,9 @@ bool FLAG_ACK_TOPIC = false;
 #define SSS_PATH  "/home/pi/Desktop/SSSS/"
 
 
-LIST  lst ; 
+LIST  lst ;
 
-int id ; 
+int id ;
 
 const char* mqttServer =  "192.168.0.110";
 const int mqttPort = 1883;
@@ -61,23 +61,23 @@ char value_topic[TOPIC_SIZE];
 unsigned char sss_share_key[40];
 unsigned char session_key[BLOCK_SIZE];
 unsigned char ks_symm_key[BLOCK_SIZE];
-unsigned char ks_pr_key[1024]; 
+unsigned char ks_pr_key[1024];
 unsigned char Didc[ELEMENT_LEN];
 
 
 unsigned char *iv = (unsigned char*)"012345678912345";
 /*
- * Read private key 
- */ 
+ * Read private key
+ */
 void readprivk(char * path)
 {
      FILE *fp;
      struct stat st; /*declare stat variable*/
-     int len  = 1024; 
+     int len  = 1024;
     if(stat(path,&st)==0){
       len = st.st_size;
      #ifdef CRYP_DBG
-     printf(" len = %d\n", len); 
+     printf(" len = %d\n", len);
      #endif
     }
     fp = fopen(path, "r");
@@ -85,52 +85,55 @@ void readprivk(char * path)
         printf("Could not open file %s",path);
         return ;
     }
-    
+
     fread(ks_pr_key, 1, len, fp);
     fclose(fp);
 }
 
 int main(int argc, char* argv[]) {
-    
 
-    
+
+
     if (argc >5 || argc <4 ) {
-        printf ("Wrong number of argument\n"); 
-        printf(" KS Id  enc_mode(ibe, rsa) [private key path (only for rsa mode)  sharing mode (sss,ksn) \n"); 
-        return 1; 
-        
+      printf ("Wrong number of argument\n");
+      printf("ksibe ID  Enc_Mode [prK] Sharing_Mode\n");
+      printf("Id:\t\t Keystore id (1,2,..,etc.)\n");
+      printf("Enc_Mode:\t ibe  or rsa \n");
+      printf("prk:\t\t The path of the rsa private key. Only need if Enc_Mode is rsa\n");
+      printf("Sharing_Mode:\t sss for Shamir Secret Sharing  or ksn for secret key splitting\n");
+      return 1; 
     }
-    
+
     id = atoi(argv[1]);
-    
+
     sprintf(KeyStoreID, "%d", id);
     sprintf(ks_ibe_id, "keystore%d@tum.com", id);
 
     printf("key store ibe id: %s\n", ks_ibe_id);
-    
+
     if (!strncmp(argv[2], "ibe", 3)){
-       
-        enc_mode = IBE ; 
+
+        enc_mode = IBE ;
         if (!strncmp(argv[2], "ksn", 3))
             sharing_mode = KSN;
-        else 
+        else
             sharing_mode = SSS;
     }
-     else 
+     else
      {
         enc_mode = PKE ;
         if (!strncmp(argv[4], "ksn", 3))
             sharing_mode = KSN;
-        else 
+        else
             sharing_mode = SSS;
     }
-    
-     // initie db 
+
+     // initie db
      Initdb();
-     
-    
-     /* 
-      *Encryption mode is IBE 
+
+
+     /*
+      *Encryption mode is IBE
       */
      if (enc_mode) {
         pairing_init_set_buf(ibe_param_pub.pairing, TYPEA_PARAMS, strlen(TYPEA_PARAMS));
@@ -159,7 +162,7 @@ int main(int argc, char* argv[]) {
         #ifdef SELFTEST
         unsigned char testmsg[32] = {0};
 	    int fd = open("/dev/urandom",O_RDONLY);
-	    read(fd, testmsg, 32); 
+	    read(fd, testmsg, 32);
 	    close(fd);
         printf("original message: \n");
         PrintHEX(testmsg, 32);
@@ -183,18 +186,18 @@ int main(int argc, char* argv[]) {
     if (!enc_mode) {
         char *privk_path =  argv[3];
         readprivk(privk_path);
-        #ifdef CRYP_DBG  
-        printf(" private key :\n"); 
+        #ifdef CRYP_DBG
+        printf(" private key :\n");
         printf("%s", ks_pr_key);
         #endif
 
     }
 
-  
+
     int rc = 0;
-    
-    /** 
-     *Start Mosquitto Client 
+
+    /**
+     *Start Mosquitto Client
      */
     printf("Starting Key Store %d \n", id);
     printf("Waiting connection from IoT node ...\n");
@@ -203,12 +206,12 @@ int main(int argc, char* argv[]) {
 
     mosquitto_lib_init();
     mosq = mosquitto_new(KeyStoreID, true, 0);
-    
+
     if (mosq) {
         mosquitto_message_callback_set(mosq, KsCallback);
-        
+
         rc = mosquitto_connect(mosq, mqttServer, mqttPort, 60);
-        
+
         if (rc) {
             printf("Error: %s \n", mosquitto_strerror(rc));
             mosquitto_destroy(mosq);
@@ -227,7 +230,7 @@ int main(int argc, char* argv[]) {
 
             rc = mosquitto_loop(mosq, 0, 1);
         }
-        
+
         mosquitto_destroy(mosq);
     }
 
@@ -239,7 +242,7 @@ int main(int argc, char* argv[]) {
 void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *msg) {
 
     printf("Receive message under topic: %s \n", msg->topic);
-    printf("Received message length: %d \n", msg->payloadlen);    
+    printf("Received message length: %d \n", msg->payloadlen);
 
     int rc = 0;
 
@@ -248,14 +251,14 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
     char* token2 = strtok(NULL, delimiter);
     char* token3 = strtok(NULL, delimiter);
     char* token4 = strtok(NULL, delimiter);
-    
-    int hashlen = 32; 
-    
+
+    int hashlen = 32;
+
     if (!strcmp(token3, "value") && !strcmp(token4, KeyStoreID)) {
         printf("*************************************\n");
         printf("*   Phase 1: negotiate master symetric key   *\n");
         printf("*************************************\n");
-         
+
         memset(ack_topic, 0, TOPIC_SIZE);
         memcpy(ack_topic, base_topic, strlen(base_topic));
         memcpy(ack_topic + strlen(base_topic), token2, strlen(token2));
@@ -270,19 +273,19 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         printf("Seperated topic: %s, length: %ld \n", token2, strlen(token2));
         printf("Generated acknowledgement topic: %s \n", ack_topic);
         #endif
-            
+
         unsigned char cipher[MAX_TEXT_SIZE];
         unsigned char nonce[NONCE_SIZE];
-        unsigned char iotpk[PKLEN]; 
+        unsigned char iotpk[PKLEN];
         int len;
 
         /* decrypt received message to get the  Master symmetric Key mk */
-        //IBE mode 
+        //IBE mode
         if (enc_mode){
             int length = 2*BLOCK_SIZE;
             unsigned char Uc[ELEMENT_LEN];
             unsigned char plainmsg[length];
-            
+
             memcpy(cipher, msg->payload, 2*BLOCK_SIZE);
             memcpy(Uc, msg->payload + 2*BLOCK_SIZE, ELEMENT_LEN);
             memcpy(iotpk, msg->payload + 2*BLOCK_SIZE + ELEMENT_LEN, PKLEN);
@@ -300,26 +303,26 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             memcpy(nonce, plainmsg + BLOCK_SIZE, BLOCK_SIZE);
         }
 
-        // PKE mode 
+        // PKE mode
         if ( !enc_mode) {
             int length = BLOCK_SIZE+NONCE_SIZE;
-            unsigned char plainmg[length]; 
-            
+            unsigned char plainmg[length];
+
             memset(ks_symm_key, 0, BLOCK_SIZE);
             memset(cipher, 0, MAX_TEXT_SIZE);
             memset(nonce, 0, NONCE_SIZE);
             memset(iotpk, 0, PKLEN);
-            
+
             #ifdef CRYP_DBG
             printf("Received msg: ");
             PrintHEX(msg->payload, msg->payloadlen);
             #endif
-            
+
             size_t cipher_len = msg->payloadlen - PKLEN;
             memcpy(cipher, msg->payload, cipher_len);
-            
-            memcpy(iotpk,  msg->payload+cipher_len, PKLEN); 
-           
+
+            memcpy(iotpk,  msg->payload+cipher_len, PKLEN);
+
             #ifdef CRYP_DBG
             printf("Received IOT PK: ");
             PrintHEX(iotpk, PKLEN);
@@ -330,7 +333,7 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
                 printf("Failed to decrypt the rsa encrypted symmetric key! \n");
                 return ;
             } else {
-                memcpy(ks_symm_key, plainmg, BLOCK_SIZE); 
+                memcpy(ks_symm_key, plainmg, BLOCK_SIZE);
                 memcpy (nonce,plainmg+BLOCK_SIZE,NONCE_SIZE);
             }
         }
@@ -338,7 +341,7 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         #ifdef CRYP_DBG
         printf("Received MKEY: ");
         PrintHEX(ks_symm_key, BLOCK_SIZE);
-        
+
         printf("Received Nonce: ");
         PrintHEX(nonce, NONCE_SIZE);
         #endif
@@ -349,68 +352,68 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         PrintHEX(ks_symm_key, BLOCK_SIZE);
         printf("<<<<<<< Start ACK ENC >>>>>>> \n");
         printf("iv used to encrypt nonce: ");
-        PrintHEX(iv, 16);  
+        PrintHEX(iv, 16);
         #endif
-        
-        
-        unsigned char hpk[hashlen]; 
-        
-        openssl_hash(iotpk, PKLEN, hpk); 
+
+
+        unsigned char hpk[hashlen];
+
+        openssl_hash(iotpk, PKLEN, hpk);
         /*
          ******************************
          *    E_MK(H(pk)XOR N )       *
          ******************************
          */
-        int akmsglen = hashlen; 
-        unsigned char  plainack [akmsglen]; 
+        int akmsglen = hashlen;
+        unsigned char  plainack [akmsglen];
         unsigned char encak[akmsglen];
-        
-        //H(pk) xor Nonce 
+
+        //H(pk) xor Nonce
          #ifdef CRYP_DBG
-        printf("HPK:"); 
-        PrintHEX(hpk, hashlen); 
-         
-        printf("nonce :"); 
-        PrintHEX(nonce,NONCE_SIZE);  
+        printf("HPK:");
+        PrintHEX(hpk, hashlen);
+
+        printf("nonce :");
+        PrintHEX(nonce,NONCE_SIZE);
         #endif
-        
+
         for (int i= 0 ; i< hashlen; i++)
-            plainack[i] = hpk[i] ^ nonce [i %16]; 
-            
+            plainack[i] = hpk[i] ^ nonce [i %16];
+
         #ifdef CRYP_DBG
-        printf("XOR :"); 
-        PrintHEX(plainack,hashlen);  
+        printf("XOR :");
+        PrintHEX(plainack,hashlen);
         #endif
-               
+
         len = aes_encryption(plainack, akmsglen, ks_symm_key, iv, encak);
         if (len == -1) {
             printf("Failed to encrypt the nonce using KeyStore symmetric key! \n");
         } else {
             printf("encrypted nonce length: %d \n", len);
         }
-        
+
         #ifdef CRYP_DBG
         printf("encrypted ACK: ");
         PrintHEX(encak, len);
         printf("<<<<<<<  END ACK ENC  >>>>>>> \n");
         #endif
-        
+
         /* Send encrypted nonce and iv back to client */
         unsigned char ack_message[MAX_TEXT_SIZE];
-    
+
         memset(ack_message, 0, MAX_TEXT_SIZE);
         memcpy(ack_message, encak, len);
         memcpy(ack_message + len, iv, 16);
         ack_message[len + 16] = '\0';
-        
+
          #ifdef CRYP_DBG
         printf("ack_message: \n");
         PrintHEX(ack_message, len + 16);
         printf("<<<<<<<  END ACK ENC  >>>>>>> \n");
         #endif
         /* publish encrypted nonce back to client */
-        char ackt[70]; 
-        sprintf(ackt, "%s/%d",ack_topic,id); 
+        char ackt[70];
+        sprintf(ackt, "%s/%d",ack_topic,id);
         rc = mosquitto_publish(mosq, NULL, ackt, len + 17, ack_message, 0, false);
 
         if (rc != 0) {
@@ -418,31 +421,31 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         } else {
             printf("Published encrypted nonce! \n");
         }
-        
-        /* update the lst*/ 
-         int rid = AddsymK(hpk,ks_symm_key); 
+
+        /* update the lst*/
+         int rid = AddsymK(hpk,ks_symm_key);
         #ifdef CRYP_DBG
         if (rid != -1) {
             printf(" The Master key was saved into db");
             //Printlst(db[rid]); }
-            Printdb(); 
+            Printdb();
         }
-        else 
-            printf(" Error, master key was not saved\n"); 
+        else
+            printf(" Error, master key was not saved\n");
         #endif
-        
-        //memcpy(lst.hiot, hpk, HASH_LEN) ; 
-        //memcpy (lst.msymk, ks_symm_key, BLOCK_SIZE); 
-        //Printlst(lst); 
+
+        //memcpy(lst.hiot, hpk, HASH_LEN) ;
+        //memcpy (lst.msymk, ks_symm_key, BLOCK_SIZE);
+        //Printlst(lst);
     }
 
     if (!strcmp(token3, "sk")&& !strcmp(token4, KeyStoreID)) {
         printf("**************************************\n");
         printf("*   Phase 2:  Topic Key Distribution *\n");
         printf("**************************************\n");
-        
-        
-        // Key splitting mode 
+
+
+        // Key splitting mode
         if (!sharing_mode) {
             #ifdef CRYP_DBG
             printf("**************************************\n");
@@ -452,11 +455,11 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             unsigned char EkSk[BLOCK_SIZE + 2 *  hashlen];
             unsigned char iv[BLOCK_SIZE];
             unsigned char dmsg [BLOCK_SIZE + 2 *  hashlen];
-            unsigned char rhpk[hashlen]; 
-            unsigned char rht [hashlen]; 
-            
-           
-            
+            unsigned char rhpk[hashlen];
+            unsigned char rht [hashlen];
+
+
+
             memcpy(EkSk, msg->payload, BLOCK_SIZE + 2 *  hashlen);
             memcpy(iv, msg->payload + BLOCK_SIZE+ 2 *  hashlen, BLOCK_SIZE);
 
@@ -466,12 +469,12 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             printf("Received iv: ");
             PrintHEX(iv, BLOCK_SIZE);
             #endif
-            
-            
-       
-        
+
+
+
+
             rc = aes_decryption(EkSk, BLOCK_SIZE+ 2 * hashlen, ks_symm_key, iv, dmsg);
-               
+
             if (rc == -1) {
                 printf("Failed to decrypt session key! \n");
             } else {
@@ -479,26 +482,26 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
                 printf("Decrypted message: ");
                 PrintHEX(dmsg, rc);
                 #endif
-                
-                memcpy(session_key,dmsg, BLOCK_SIZE) ; 
-                memcpy(rhpk, dmsg + BLOCK_SIZE, hashlen); 
-                memcpy(rht, dmsg + BLOCK_SIZE+ hashlen, hashlen); 
-                
+
+                memcpy(session_key,dmsg, BLOCK_SIZE) ;
+                memcpy(rhpk, dmsg + BLOCK_SIZE, hashlen);
+                memcpy(rht, dmsg + BLOCK_SIZE+ hashlen, hashlen);
+
                  #ifdef CRYP_DBG
-               
+
                 printf("Decrypted share Key: ");
                 PrintHEX(session_key, BLOCK_SIZE);
-                
+
                 printf("Decrypted hpk: ");
                 PrintHEX(rhpk, hashlen);
-                
+
                 printf("Decrypted ht: ");
                 PrintHEX(rht, hashlen);
                 #endif
             }
         }
 
-        // Shamir's Secret Sharing 
+        // Shamir's Secret Sharing
         if (sharing_mode) {
              #ifdef CRYP_DBG
             printf("**************************************\n");
@@ -515,9 +518,9 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             unsigned char rht[hashlen];
             unsigned char rtag[hashlen];
             const char  * aad = "";
-            
-            
-             unsigned char msymK[BLOCK_SIZE] ; 
+
+
+             unsigned char msymK[BLOCK_SIZE] ;
 
             memcpy(EkSk, msg->payload,  3*BLOCK_SIZE + hashlen);
             memcpy(iv,   msg->payload + 3*BLOCK_SIZE + hashlen, BLOCK_SIZE);
@@ -531,26 +534,26 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             PrintHEX(iv, BLOCK_SIZE);
                printf("Received tag: ");
             PrintHEX(rtag, BLOCK_SIZE);
-            printf("Key to decrypt message: "); 
+            printf("Key to decrypt message: ");
             PrintHEX(ks_symm_key,BLOCK_SIZE );
-            
-            printf("recived iotpk: "); 
+
+            printf("recived iotpk: ");
             PrintHEX(rhpk,HASH_LEN );
             #endif
 
-            
-            /* Get the master symmetric key based on the H(iotpk) */ 
-             int rowid = GetSymK(rhpk, msymK) ; 
+
+            /* Get the master symmetric key based on the H(iotpk) */
+             int rowid = GetSymK(rhpk, msymK) ;
             #ifdef CRYP_DBG
              if (memcmp(msymK, ks_symm_key,BLOCK_SIZE)==0)
-                printf ("Key extracted succefully\n" ); 
-            else 
-                printf (" Key extracted NOT succefully \n " ); 
-            
+                printf ("Key extracted succefully\n" );
+            else
+                printf (" Key extracted NOT succefully \n " );
+
             #endif
-            
-            int res =   aes_gcm_decrypt(EkSk, mlen,(unsigned char *)aad, strlen(aad),rtag, msymK, iv, BLOCK_SIZE, dmsg); 
-            
+
+            int res =   aes_gcm_decrypt(EkSk, mlen,(unsigned char *)aad, strlen(aad),rtag, msymK, iv, BLOCK_SIZE, dmsg);
+
             if (rc == -1) {
                 printf("Failed to decrypt the shared secret! \n");
             } else {
@@ -559,11 +562,11 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
                 printf("Decrypted message: \n");
                 PrintHEX(dmsg, rc);
                 #endif
-                
+
                 memcpy(sss_share_key, dmsg, key_len);
                 memcpy(rht, dmsg + key_len , hashlen);
-                
-                
+
+
 
                 #ifdef CRYP_DBG
                 sss_share_key[key_len] = '\0';
@@ -572,20 +575,20 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
 
                 printf("Decrypted hpk: ");
                 PrintHEX(rhpk, hashlen);
-                
+
                 printf("Decrypted ht: ");
                 PrintHEX(rht, hashlen);
                 #endif
-                
-                /* update the db to add the share*/ 
-                //memcpy(lst.shar, dmsg, key_len) ; 
-                //memcpy(lst.htpk, rht, HASH_LEN); 
-                // Printlst(lst); 
-                // SaveShar(id,lst); 
-                int rown = Addshare(rhpk,rht, dmsg); 
-                //Printlst(db[rown]); 
+
+                /* update the db to add the share*/
+                //memcpy(lst.shar, dmsg, key_len) ;
+                //memcpy(lst.htpk, rht, HASH_LEN);
+                // Printlst(lst);
+                // SaveShar(id,lst);
+                int rown = Addshare(rhpk,rht, dmsg);
+                //Printlst(db[rown]);
                 Printdb();
-                SaveShar(id,db[rown]); 
+                SaveShar(id,db[rown]);
             }
         }
     }
@@ -616,7 +619,7 @@ int rsa_encryption(unsigned char* plaintext, int plaintext_len, unsigned char* k
 
     int rc = 0;
     RSA* rsa = createRSA(key, 1);
-    
+
     if (rsa == NULL) {
         rc = -1;
     } else {
@@ -627,7 +630,7 @@ int rsa_encryption(unsigned char* plaintext, int plaintext_len, unsigned char* k
 }
 
 int rsa_decryption(unsigned char* enc_data, int data_len, unsigned char *key, unsigned char* dec_data) {
-    
+
     int rc = 0;
     RSA* rsa = createRSA(key, 0);
 
@@ -642,15 +645,15 @@ int rsa_decryption(unsigned char* enc_data, int data_len, unsigned char *key, un
 
 
 
-	
+
 void handleErrors()
 	{
-		printf("Error"); 		
+		printf("Error");
 }
 
 /*
  * source: https://wiki.openssl.org/index.php/EVP_Authenticated_Encryption_and_Decryption
- */	
+ */
 int aes_gcm_encrypt(unsigned char *plaintext, int plaintext_len,
                 unsigned char *aad, int aad_len,
                 unsigned char key[],
@@ -809,7 +812,7 @@ int aes_encryption(unsigned char* plaintext, int plaintext_len, unsigned char* k
     }
 
     ciphertext_len = len;
-    
+
     /* finalise the encryption. Further ciphertext bytes may be written at this stage */
     if (1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len)) {
         printf("ERROR 4: %ld \n", ERR_get_error());
@@ -820,13 +823,13 @@ int aes_encryption(unsigned char* plaintext, int plaintext_len, unsigned char* k
 
     /* clean up */
     EVP_CIPHER_CTX_free(ctx);
-    
+
     return ciphertext_len;
 }
 
 int aes_decryption(unsigned char* cipher, int cipher_len, unsigned char* key,
                       unsigned char* iv, unsigned char* plaintext) {
-    
+
     EVP_CIPHER_CTX *ctx;
     int len;
     int plaintext_len;
@@ -841,7 +844,7 @@ int aes_decryption(unsigned char* cipher, int cipher_len, unsigned char* key,
         printf("ERROR 2: %ld \n", ERR_get_error());
         return -1;
     }
-    
+
     EVP_CIPHER_CTX_set_padding(ctx, 0);
 
     /* decrypt message */
@@ -850,11 +853,11 @@ int aes_decryption(unsigned char* cipher, int cipher_len, unsigned char* key,
         return -1;
     }
     plaintext_len = len;
-    
+
     if (1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) {
         printf("ERROR 4: %ld \n", ERR_get_error());
         return -1;
-    }    
+    }
     plaintext_len += len;
 
     EVP_CIPHER_CTX_free(ctx);
@@ -862,22 +865,22 @@ int aes_decryption(unsigned char* cipher, int cipher_len, unsigned char* key,
     return plaintext_len;
 }
 
-int rsa_signature_verify(const unsigned char* m, unsigned int m_length, 
+int rsa_signature_verify(const unsigned char* m, unsigned int m_length,
                     unsigned char* sigbuf, unsigned int siglen, unsigned char* pub_key) {
-    
+
     int rc = 0;
-    
+
     RSA* rsa = createRSA(pub_key, 1);
     EVP_PKEY* pubkey = EVP_PKEY_new();
-    EVP_PKEY_assign_RSA(pubkey, rsa);   
+    EVP_PKEY_assign_RSA(pubkey, rsa);
     EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
-    
+
     /* Initialize `key` with a public key */
     if (1 != EVP_DigestVerifyInit(mdctx, NULL, EVP_sha256(), NULL, pubkey)) {
         printf("Error1: %ld \n", ERR_get_error());
         return -1;
     }
-    
+
     if (1 != EVP_DigestVerifyUpdate(mdctx, m, m_length)) {
         printf("Error2: %ld \n", ERR_get_error());
         return -1;
@@ -891,7 +894,7 @@ int rsa_signature_verify(const unsigned char* m, unsigned int m_length,
     }
 
     EVP_MD_CTX_free(mdctx);
-    
+
     return rc;
 }
 
@@ -903,7 +906,7 @@ void ibe_extract(unsigned char *Didc) {
 
     element_init_G1(Qid, ibe_param_pub.pairing);
     element_init_G1(Did, ibe_param_pub.pairing);
-  
+
     printf("extract id: %s\n", ks_ibe_id);
     openssl_hash((unsigned char *)ks_ibe_id, strlen(ks_ibe_id), hash);
 
@@ -939,7 +942,7 @@ void ibe_encryption(unsigned char *plaintext, \
     printf("ibe enc finish hashing\n");
 
     element_from_hash(Qid, hash, HASH_LEN);
-    
+
     element_mul_zn(U, ibe_param_pub.P, r);
     element_pairing(gid, Qid, ibe_param_pub.Kpub);
     element_pow_zn(gid, gid, r);
@@ -948,9 +951,9 @@ void ibe_encryption(unsigned char *plaintext, \
 
     int gidlen = element_length_in_bytes(gid);
     printf("gid length: %d\n", gidlen);
-   
+
     openssl_hash(gs, ELEMENT_LEN, hash) ;
-    
+
     int j = 0;
     for (int i = 0; i < plaintext_len; i++) {
         if (j >= HASH_LEN) {
@@ -973,7 +976,7 @@ void ibe_encryption(unsigned char *plaintext, \
 int ibe_decryption(unsigned char *ciphertext, size_t ciphertext_len, \
                          unsigned char *Uc, unsigned char *Didc, unsigned char *plaintext) {
 
-    printf("ibe decryption start ...\n");    
+    printf("ibe decryption start ...\n");
 
     unsigned char *gs = NULL, hash[HASH_LEN] = {0};
     element_t U, Did, xt;
@@ -1012,8 +1015,8 @@ int ibe_decryption(unsigned char *ciphertext, size_t ciphertext_len, \
 }
 
 /*
- * Hash 
- */ 
+ * Hash
+ */
 
 
  void openssl_hash(unsigned char  * m, int len, unsigned char *hash)
@@ -1028,12 +1031,12 @@ int ibe_decryption(unsigned char *ciphertext, size_t ciphertext_len, \
          /*
      * unsigned char *SHA256(const unsigned char *d, size_t n,
       unsigned char *md);
-      
-      
+
+
      SHA256(m, len, hash);
      */
  }
-     
+
 void PrintHEX(unsigned char* str, int len) {
 
     for (int i = 0; i < len; ++i) {

@@ -137,7 +137,6 @@ void reconnect() {
       unsigned long b_mssl= millis();
     /* Attempt to connect */
      if (mqttClient.connect(clientId.c_str())) {
-      //if (mqttClient.connect(clientId.c_str(), NULL, NULL, NULL,0,0,NULL,0)) {
       unsigned long e_mssl = millis();
       Serial.println("connected");
        #ifdef TIME_DEBUG
