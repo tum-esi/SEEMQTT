@@ -59,24 +59,45 @@ keynote_keyhash(void *key, int alg)
     switch (alg)
     {
 #ifdef CRYPTO
+    BIGNUM *dsap, *dsaq, *dsag, *dsapub_key;
+    BIGNUM *rsan, *rsae;
 	case KEYNOTE_ALGORITHM_DSA:
 	    dsa = (DSA *) key;
-	    res += BN_mod_word(dsa->p, HASHTABLESIZE);
-	    res += BN_mod_word(dsa->q, HASHTABLESIZE);
-	    res += BN_mod_word(dsa->g, HASHTABLESIZE);
-	    res += BN_mod_word(dsa->pub_key, HASHTABLESIZE);
+
+        DSA_get0_pqg(dsa, &dsap, &dsaq, &dsag);
+        DSA_get0_key(dsa, &dsapub_key, NULL);
+	    
+        res += BN_mod_word(dsap, HASHTABLESIZE);
+	    res += BN_mod_word(dsaq, HASHTABLESIZE);
+	    res += BN_mod_word(dsag, HASHTABLESIZE);
+	    res += BN_mod_word(dsapub_key, HASHTABLESIZE);
+
+//	    res += BN_mod_word(dsa->p, HASHTABLESIZE);
+//	    res += BN_mod_word(dsa->q, HASHTABLESIZE);
+//	    res += BN_mod_word(dsa->g, HASHTABLESIZE);
+//	    res += BN_mod_word(dsa->pub_key, HASHTABLESIZE);
 	    return res % HASHTABLESIZE;
 
         case KEYNOTE_ALGORITHM_RSA:
-	    rsa = (RSA *) key;
-            res += BN_mod_word(rsa->n, HASHTABLESIZE);
-            res += BN_mod_word(rsa->e, HASHTABLESIZE);
+	        rsa = (RSA *) key;
+            RSA_get0_key(rsa, &rsan, &rsae, NULL);
+
+            res += BN_mod_word(rsan, HASHTABLESIZE);
+            res += BN_mod_word(rsae, HASHTABLESIZE);
+
+//            res += BN_mod_word(rsa->n, HASHTABLESIZE);
+//            res += BN_mod_word(rsa->e, HASHTABLESIZE);
 	    return res % HASHTABLESIZE;
 
 	case KEYNOTE_ALGORITHM_X509: /* RSA-specific */
 	    rsa = (RSA *) key;
-            res += BN_mod_word(rsa->n, HASHTABLESIZE);
-            res += BN_mod_word(rsa->e, HASHTABLESIZE);
+            RSA_get0_key(rsa, &rsan, &rsae, NULL);
+
+            res += BN_mod_word(rsan, HASHTABLESIZE);
+            res += BN_mod_word(rsae, HASHTABLESIZE);
+
+//            res += BN_mod_word(rsa->n, HASHTABLESIZE);
+//            res += BN_mod_word(rsa->e, HASHTABLESIZE);
 	    return res % HASHTABLESIZE;
 #endif /* CRYPTO */
 

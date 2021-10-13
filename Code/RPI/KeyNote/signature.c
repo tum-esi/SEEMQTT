@@ -47,9 +47,7 @@
 static const char hextab[] = {
      '0', '1', '2', '3', '4', '5', '6', '7',
      '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-};
-
-
+}; 
 
 /*
  * Actual conversion to hex.
@@ -402,8 +400,7 @@ keynote_get_key_algorithm(char *key, int *encoding, int *internalencoding)
 static int
 keynote_get_private_key_algorithm(char *key, int *encoding,
 				  int *internalencoding)
-{ 
-    
+{
     if (strncasecmp(KEYNOTE_PRIVATE_KEY_PREFIX, key, 
 		    KEYNOTE_PRIVATE_KEY_PREFIX_LEN))
     {
@@ -422,9 +419,6 @@ keynote_get_private_key_algorithm(char *key, int *encoding,
 int
 kn_decode_key(struct keynote_deckey *dc, char *key, int keytype)
 {
-    
-    
-    
 #ifdef CRYPTO
     void *kk = (void *) NULL;
     X509 *px509Cert;
@@ -457,7 +451,6 @@ kn_decode_key(struct keynote_deckey *dc, char *key, int keytype)
     key++;
 
     /* Remove ASCII encoding */
-
     switch (encoding)
     {
 	case ENCODING_NONE:
@@ -468,7 +461,6 @@ kn_decode_key(struct keynote_deckey *dc, char *key, int keytype)
 	    if (kn_decode_hex(key, (char **) &decoded) != 0)
 	      return -1;
 	    ptr = decoded;
-	
 	    break;
 
 	case ENCODING_BASE64:
@@ -566,7 +558,6 @@ kn_decode_key(struct keynote_deckey *dc, char *key, int keytype)
         {
             if (d2i_RSAPrivateKey((RSA **) &kk, &decoded, len) == (RSA *) NULL)
             {
-		  
                 if (ptr != (unsigned char *) NULL)
                   free(ptr);
                 RSA_free(kk);
@@ -624,7 +615,8 @@ kn_decode_key(struct keynote_deckey *dc, char *key, int keytype)
 	}
 
 	/* RSA-specific */
-	dc->dec_key = pPublicKey->pkey.rsa;
+	//dc->dec_key = pPublicKey->pkey.rsa;
+    dc->dec_key = EVP_PKEY_get1_RSA(pPublicKey);
 
 	if(ptr)
 	  free(ptr);
@@ -687,11 +679,24 @@ kn_keycompare(void *key1, void *key2, int algorithm)
 #ifdef CRYPTO
 	    p1 = (DSA *) key1;
 	    p2 = (DSA *) key2;
-	    if (!BN_cmp(p1->p, p2->p) &&
-		!BN_cmp(p1->q, p2->q) &&
-		!BN_cmp(p1->g, p2->g) &&
-		!BN_cmp(p1->pub_key, p2->pub_key))
+
+        BIGNUM *p1p, *p1q, *p1g, *p2p, *p2q, *p2g, *p1pub_key, *p2pub_key;
+        DSA_get0_pqg(p1, &p1p, &p1q, &p1g);
+        DSA_get0_pqg(p2, &p2p, &p2q, &p2g);
+        DSA_get0_key(p1, &p1pub_key, NULL);
+        DSA_get0_key(p2, &p2pub_key, NULL);
+	    
+        if (!BN_cmp(p1p, p2p) &&
+		!BN_cmp(p1q, p2q) &&
+		!BN_cmp(p1g, p2g) &&
+		!BN_cmp(p1pub_key, p2pub_key))
 	      return RESULT_TRUE;
+
+//	    if (!BN_cmp(p1->p, p2->p) &&
+//		!BN_cmp(p1->q, p2->q) &&
+//		!BN_cmp(p1->g, p2->g) &&
+//		!BN_cmp(p1->pub_key, p2->pub_key))
+//	      return RESULT_TRUE;
 	    else
 	      return RESULT_FALSE;
 #else /* CRYPTO */
@@ -702,9 +707,18 @@ kn_keycompare(void *key1, void *key2, int algorithm)
 #ifdef CRYPTO
             p3 = (RSA *) key1;
             p4 = (RSA *) key2;
-            if (!BN_cmp(p3->n, p4->n) &&
-                !BN_cmp(p3->e, p4->e))
+
+            BIGNUM *p3n, *p3e, *p4n, *p4e;
+            RSA_get0_key(p3, &p3n, &p3e, NULL);
+            RSA_get0_key(p4, &p4n, &p4e, NULL);
+            
+            if (!BN_cmp(p3n, p4n) &&
+                !BN_cmp(p3e, p4e))
               return RESULT_TRUE;
+
+//            if (!BN_cmp(p3->n, p4->n) &&
+//                !BN_cmp(p3->e, p4->e))
+//              return RESULT_TRUE;
             else
 	      return RESULT_FALSE;
 #else /* CRYPTO */
@@ -715,9 +729,18 @@ kn_keycompare(void *key1, void *key2, int algorithm)
 #ifdef CRYPTO
             p3 = (RSA *) key1;
             p4 = (RSA *) key2;
-            if (!BN_cmp(p3->n, p4->n) &&
-                !BN_cmp(p3->e, p4->e))
+
+            //BIGNUM *p3n, *p3e, *p4n, *p4e;
+            RSA_get0_key(p3, &p3n, &p3e, NULL);
+            RSA_get0_key(p4, &p4n, &p4e, NULL);
+            
+            if (!BN_cmp(p3n, p4n) &&
+                !BN_cmp(p3e, p4e))
               return RESULT_TRUE;
+
+//            if (!BN_cmp(p3->n, p4->n) &&
+//                !BN_cmp(p3->e, p4->e))
+//              return RESULT_TRUE;
             else
 	      return RESULT_FALSE;
 #else /* CRYPTO */
@@ -763,7 +786,6 @@ keynote_sigverify_assertion(struct assertion *as)
     int len = 0;
     DSA *dsa;
     RSA *rsa;
-     
 #endif /* CRYPTO */
     if ((as->as_signature == (char *) NULL) ||
 	(as->as_startofsignature == (char *) NULL) ||
@@ -889,23 +911,13 @@ keynote_sigverify_assertion(struct assertion *as)
       if ((alg == KEYNOTE_ALGORITHM_RSA) && (intenc == INTERNAL_ENC_PKCS1))
       {
           rsa = (RSA *) as->as_authorizer;
-          
-	  /*
-	  if (RSA_verify_ASN1_OCTET_STRING(RSA_PKCS1_PADDING, res2, hashlen,
+          if (RSA_verify_ASN1_OCTET_STRING(RSA_PKCS1_PADDING, res2, hashlen,
 					   decoded, len, rsa) == 1)
           {
               if (ptr != (unsigned char *) NULL)
                 free(ptr);
               return SIGRESULT_TRUE;
-          } 
-	  */
-	   int type = (hashtype ==KEYNOTE_HASH_SHA1)? NID_sha1:NID_md5; 
-	  if (RSA_verify(type, res2, hashlen, decoded, len, rsa) == 1)
-          {
-              if (ptr != (unsigned char *) NULL)
-                free(ptr);
-              return SIGRESULT_TRUE;
-          } 
+          }
       }
       else
 	if ((alg == KEYNOTE_ALGORITHM_X509) && (intenc == INTERNAL_ENC_ASN1))
@@ -937,8 +949,6 @@ static char *
 keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
 		       int keyalg, int verifyflag)
 {
-   
-
 #if defined(CRYPTO) || defined(PGPLIB)
 #ifdef CRYPTO
     int slen, i, hashlen = 0, hashtype, alg, encoding, internalenc;
@@ -959,39 +969,27 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
 	(key == (void *) NULL) ||
 	(as->as_signeralgorithm == KEYNOTE_ALGORITHM_NONE))
     {
-	
 	keynote_errno = ERROR_SYNTAX;
 	return (char *) NULL;
     }
 
-
-   
     alg = keynote_get_sig_algorithm(sigalg, &hashtype, &encoding,
 				    &internalenc);
-if (((alg != as->as_signeralgorithm) &&
+    if (((alg != as->as_signeralgorithm) &&
 	 !((alg == KEYNOTE_ALGORITHM_RSA) &&
 	   (as->as_signeralgorithm == KEYNOTE_ALGORITHM_X509)) &&
 	 !((alg == KEYNOTE_ALGORITHM_X509) &&
-	   (as->as_signeralgorithm == KEYNOTE_ALGORITHM_RSA))))
-	  { 
-	
-	keynote_errno = ERROR_SYNTAX;
-	return (char *) NULL;
-    }
-      
-	   
-	
-      if  ((alg != keyalg) &&
+	   (as->as_signeralgorithm == KEYNOTE_ALGORITHM_RSA))) ||
+        ((alg != keyalg) &&
 	 !((alg == KEYNOTE_ALGORITHM_RSA) &&
 	   (keyalg == KEYNOTE_ALGORITHM_X509)) &&
 	 !((alg == KEYNOTE_ALGORITHM_X509) &&
-	   (keyalg == KEYNOTE_ALGORITHM_RSA)))
-    { 
-	
+	   (keyalg == KEYNOTE_ALGORITHM_RSA))))
+    {
 	keynote_errno = ERROR_SYNTAX;
 	return (char *) NULL;
     }
-   
+
     sig = index(sigalg, ':');
     if (sig == (unsigned char *) NULL)
     {
@@ -1008,13 +1006,10 @@ if (((alg != as->as_signeralgorithm) &&
     	    hashlen = 20;
 	    memset(res2, 0, hashlen);
 	    SHA1_Init(&shscontext);
-	    
 	    SHA1_Update(&shscontext, as->as_startofsignature,
 			as->as_allbutsignature - as->as_startofsignature);
 	    SHA1_Update(&shscontext, sigalg, (char *) sig - sigalg);
 	    SHA1_Final(res2, &shscontext);
-	    
-	   
 #endif /* CRYPTO */
 	    break;
    
@@ -1070,17 +1065,8 @@ if (((alg != as->as_signeralgorithm) &&
               keynote_errno = ERROR_MEMORY;
               return (char *) NULL;
           }
-/*
+
           if (RSA_sign_ASN1_OCTET_STRING(RSA_PKCS1_PADDING, res2, hashlen,
-					 sbuf, &slen, rsa) <= 0)
-          {
-              free(sbuf);
-              keynote_errno = ERROR_SYNTAX;
-              return (char *) NULL;
-          }  
-*/	
-	int type  = hashtype ==KEYNOTE_HASH_SHA1?NID_sha1:NID_md5 ;
-	if (RSA_sign(type,  res2, hashlen,
 					 sbuf, &slen, rsa) <= 0)
           {
               free(sbuf);
@@ -1274,25 +1260,18 @@ kn_sign_assertion(char *buf, int buflen, char *key, char *sigalg, int vflag)
 				    &internalenc);
     if (alg != KEYNOTE_ALGORITHM_X509)
     {
-	
-	
 	/* Parse the private key */
 	s = keynote_get_private_key(key);
 	if (s == (char *) NULL)
 	  return (char *) NULL;
 
-	
-	
 	/* Decode private key */
 	i = kn_decode_key(&dc, s, KEYNOTE_PRIVATE_KEY);
-	
 	if (i == -1)
 	{
 	    free(s);
 	    return (char *) NULL;
 	}
-	  
-	
     }
     else /* X509 private key */
     {
@@ -1310,9 +1289,7 @@ kn_sign_assertion(char *buf, int buflen, char *key, char *sigalg, int vflag)
 	}
 	return (char *) NULL;
     }
-   
-     
-   
+
     sig = keynote_sign_assertion(as, sigalg, dc.dec_key, dc.dec_algorithm,
 				 vflag);
     if (alg != KEYNOTE_ALGORITHM_X509)
@@ -1372,7 +1349,7 @@ kn_encode_key(struct keynote_deckey *dc, int iencoding,
 	    return (char *) NULL;
 	}
 
-	dsa->write_params = 1;
+	//dsa->write_params = 1;
 	if (keytype == KEYNOTE_PUBLIC_KEY)
 	  i2d_DSAPublicKey(dsa, (unsigned char **) &foo);
 	else
