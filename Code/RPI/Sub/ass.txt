@@ -1,2 +1,0 @@
-topic = "t1"
-location = "l1"

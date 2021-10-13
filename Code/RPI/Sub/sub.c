@@ -47,11 +47,6 @@ char * subname = "sub1";
 
 unsigned char * session_key  = NULL; 
 
-int KSids[KSN_NUM] = {1,2,3}; 
-int KSports[KSN_NUM] = {3331,3332,3333}; 
-char * KSnames[KSN_NUM] = {"localhost", "localhost","localhoat"}; 
-
-
 
 int main(int argc, char* argv[]) {
   
@@ -60,8 +55,9 @@ int main(int argc, char* argv[]) {
     /** 
      *Start Mosquitto Client 
      */
-    printf("Startin Subscriber \n", id);
-
+    #ifdef DBG 
+    printf("Starting Subscriber %d...", id);
+    #endif
 
     struct mosquitto* mosq;
 
@@ -74,19 +70,31 @@ int main(int argc, char* argv[]) {
         rc = mosquitto_connect(mosq, mqttServer, mqttPort, 60);
         
         if (rc) {
+            #ifdef DBG
             printf("Error: %s \n", mosquitto_strerror(rc));
+            #endif
             mosquitto_destroy(mosq);
             mosquitto_lib_cleanup();
             return rc;
         }
-
+        #ifdef DBG
+        printf("started \n"); 
+        printf("Subscribe to Topics: (%s) and (%s)...", mqttConnTopic, Credtopic );
+        #endif
+        
         rc = mosquitto_subscribe(mosq, NULL, mqttConnTopic, 0);
         rc = mosquitto_subscribe(mosq, NULL, Credtopic, 0);
-        printf("Subscribe to Topics: %s and %s  :\n", mqttConnTopic, Credtopic );
+        
+         #ifdef DBG
+        printf("done \n"); 
+        printf("Waiting for messges on subscribed topics...\n", mqttConnTopic, Credtopic );
+        #endif
 
         while (run) {
             if (rc) {
-                printf("Failed to connect to the broker! Trying reconnect ... \n");
+                #ifdef DBG
+                printf("Failed to connect to the broker! Trying reconnect...\n");
+                #endif
                 mosquitto_reconnect(mosq);
                 sleep(10);
             }
@@ -103,19 +111,41 @@ int main(int argc, char* argv[]) {
 }
 
 
+
+void SaveCred(const char * buf, int len)
+{
+    FILE * fptr; 
+    fptr = fopen("CR-Pub-CA1", "w"); 
+    if (fptr ==NULL)
+    {
+        #ifdef DBG
+        printf("Error: can not open file %s \n", CR1); 
+        #endif
+            exit(1);
+    }
+    
+    for (int i =0 ; i<len ; i++)
+        fprintf(fptr, "%c", buf[i]); 
+    fclose(fptr); 
+}
+
+
+
 void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *msg) {
 
-    printf("Receive message under topic: %s \n", msg->topic);
-    printf("Received message length: %d \n", msg->payloadlen); 
+    #ifdef DBG
+    printf("Receive message under topic:(%s)\n", msg->topic);
+    printf("The recived message length=%d\n", msg->payloadlen); 
+    #endif
+    #ifdef DDBG
+    BIO_dump_fp(stdout, msg->payload, msg->payloadlen);
+    #endif
     
     int rc = 0;
-  
-  
     
-     if (!strcmp(msg->topic, mqttConnTopic))
-     {
-        
-         int rc = 0;
+    if (!strcmp(msg->topic, mqttConnTopic))
+    {
+        int rc = 0;
         //BIO_dump_fp(stdout, msg->payload, msg->payloadlen);
         unsigned char  RTAG [16]; 
         unsigned char  RIV [16]; 
@@ -129,20 +159,19 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         memcpy(RCT, msg->payload+32+ sizeof(int),msglen); 
     
         const char *aad = "";
-        //BIO_dump_fp(stdout, RCT, msglen);
-    
-        //unsigned char * key = ReadShare();
+        #ifdef DDBG
+         BIO_dump_fp(stdout, RCT, msglen);
+        #endif
     
         if(session_key != NULL)
         {
-            unsigned char * key = ReadShare();
-            printf("Key:\n"); 
-            PrintHEX(key, BLOCK_SIZE); 
-            int res =   aes_gcm_decrypt(RCT, 16,(unsigned char *)aad, strlen(aad),RTAG, key, RIV, 16, plain); 
-            printf(" res = %d \n", res); 
+            int res =   aes_gcm_decrypt(RCT, 16,(unsigned char *)aad, strlen(aad),RTAG, session_key, RIV, 16, plain); 
+            #ifdef DBG
+             printf("aes_gcm_decrypt: res = %d \n", res); 
+            #endif
             if (res >0)
             {
-                printf("plain text:\n"); 
+                printf("Plain text:\n"); 
                 BIO_dump_fp(stdout, plain, res);
             }
             else 
@@ -153,17 +182,24 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
 
     if (!strcmp(msg->topic, Credtopic))
      {
-         //session_key = ReadShare();
-         session_key = CombineShares(); 
-         PrintHEX (session_key, BLOCK_SIZE) ;
+
+        int len = msg->payloadlen; 
+        char *  buf = (char *) malloc(len); 
+        memcpy(buf, msg->payload, len); 
+        SaveCred(buf, len); 
+        session_key = ComShare(); 
+        #ifdef DDBG
+            BIO_dump_fp(stdout, session_key, BLOCK_SIZE);
+            //PrintHEX (session_key, BLOCK_SIZE) ;
+        #endif
     }
-
 }
-
 	
 void handleErrors()
 {
-    printf("Error"); 
+    #ifdef DBG
+        printf("Error");
+    #endif 
 }
 	
 int aes_gcm_encrypt(unsigned char *plaintext, int plaintext_len,
@@ -174,12 +210,8 @@ int aes_gcm_encrypt(unsigned char *plaintext, int plaintext_len,
                 unsigned char *tag)
 {
     EVP_CIPHER_CTX *ctx;
-
     int len;
-
     int ciphertext_len;
-
-
     /* Create and initialise the context */
     if(!(ctx = EVP_CIPHER_CTX_new()))
         handleErrors();
@@ -197,14 +229,12 @@ int aes_gcm_encrypt(unsigned char *plaintext, int plaintext_len,
     /* Initialise key and IV */
     if(1 != EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv))
         handleErrors();
-
     /*
      * Provide any AAD data. This can be called zero or more times as
      * required
      */
     if(1 != EVP_EncryptUpdate(ctx, NULL, &len, aad, aad_len))
         handleErrors();
-
     /*
      * Provide the message to be encrypted, and obtain the encrypted output.
      * EVP_EncryptUpdate can be called multiple times if necessary
@@ -212,7 +242,6 @@ int aes_gcm_encrypt(unsigned char *plaintext, int plaintext_len,
     if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
         handleErrors();
     ciphertext_len = len;
-
     /*
      * Finalise the encryption. Normally ciphertext bytes may be written at
      * this stage, but this does not occur in GCM mode
@@ -227,14 +256,11 @@ int aes_gcm_encrypt(unsigned char *plaintext, int plaintext_len,
 
     /* Clean up */
     EVP_CIPHER_CTX_free(ctx);
-
     return ciphertext_len;
 }
-
-
-
-              
-
+/* 
+ * aes_gcm_decrypt: Decrypt using AES-GCM-128
+ */
 int aes_gcm_decrypt(unsigned char *ciphertext, int ciphertext_len,
                 unsigned char *aad, int aad_len,
                 unsigned char *tag,
@@ -300,80 +326,44 @@ int aes_gcm_decrypt(unsigned char *ciphertext, int ciphertext_len,
         return -1;
     }
 }
-
-unsigned char * CombineShares()
+/* 
+ * ComShare: get the share from the KS and Combine them
+ */  
+unsigned char * ComShare()
 {
+    #ifdef DBG 
+     printf("Getting the shares and combine them...\n");
+    #endif
     int ksid = 0; 
     char * strshares = (char * )malloc(1024); 
     memset(strshares, '\0', 1024); 
     for (; ksid <SSS_T; ksid++)
     {
         int len = 0; 
-        char * share = GetShares(KSnames[ksid],KSports[ksid], &len); 
+        char * share = GetShare(KSnames[ksid],KSports[ksid], &len); 
         if (len>0)
             #ifdef DBG
-            printf("share[%d]=<%s>\n", ksid, share); 
-            sprintf(strshares+ ksid * len, "%s", share);
+                printf("       Share[%d] was recived !\n", ksid); 
+                #ifdef DDBG
+                printf("       Share[%d]:<%s>\n",ksid,share);
+                #endif 
             #endif
+            sprintf(strshares+ ksid * len, "%s", share);
+            
     }
     char *  result = extract_secret_from_share_strings(strshares) ; 
     #ifdef DBG 
-        printf(" Combined Key = "); 
-        PrintHEX (result, BLOCK_SIZE);
+        printf("Key was combined seuucefully!\n");
+        #ifdef DDBG 
+            BIO_dump_fp(stdout, result, BLOCK_SIZE);
+            //PrintHEX (result, BLOCK_SIZE);
+        #endif
     #endif
     return result ; 
 }
-
-unsigned char * ReadShare()
-{
-    int i = 0 ; 
-    int lenght  =KSN_NUM *(SSS_SIZE +2); 
-    int sharlenght = SSS_SIZE+1 ; 
-    char *  strshares = (char *) malloc (1024); 
-    memset(strshares, '\0', 1024) ; 
-    
-
-    for (; i<SSS_T;i++)
-    {
-        char name[5]; 
-        sprintf(name, "%d.txt", i+1);
-        char path [124] ="/home/pi/Desktop/SSSS/" ; 
-        strcat(path,name); 
-        FILE *fptr;
-        fptr = fopen(path,"r");
-        if (fptr == NULL)
-            exit(EXIT_FAILURE);
-        
-        char * line ;  
-        int len = 0 ; 
-        int read = getline(&line, &len, fptr); 
-        if (read != -1)
-        {
-            //printf("Retrieved line of length %zu :\n", read);
-            //printf("%s", line);
-        }
-        
-        char * token = strtok(line, "|");
-        
-        int index = 0 ; 
-        for (; index<3;index++)
-            token = strtok(NULL, "|");
-        //printf("%s\n", token); 
-        sprintf(strshares + (i * strlen(token)), "%s\n", token); 
-        //PrintHEX(shares[i], SSS_SIZE); 
-        // printf  ("%s", strshares); 
-        free(line);
-        fclose(fptr); 
-    }
-    
-    char *  result = extract_secret_from_share_strings(strshares); 
-    //PrintHEX (result, BLOCK_SIZE) ;
-    return result; 
- 
-}
-
-
-     
+/*
+ * PrintHex: print in Hex 
+ */      
 void PrintHEX(unsigned char* str, int len) {
 
     for (int i = 0; i < len; ++i) {
@@ -389,27 +379,32 @@ void PrintChar( const char * buf, int len)
     for (int i =0 ; i < len; i++)
         printf("%c",buf[i]); 
     printf("\n----------------------------------------------------------------------------\n"); 
-    }
+}
 
-
-char * GetShares(char * srv_hostname, int port, int * len) 
+/* 
+ * GetShares:  get the share for the KS
+ * srv_hostname: ks IP address or name 
+ * port: port number
+ * len: lenght of the the share 
+ */  
+char * GetShare(char * srv_hostname, int port, int * len) 
 { 
-    char * topic= "t1"; 
-	char * lication = "l1"; 
+    char * topic= "car_loc"; 
+	char * lication = "munich"; 
 	int sock;
 	struct sockaddr_in server;
 	struct hostent *hp;
 	//char *srv_hostname;
 	int plen;
     
-	char pbuf[100] ={'0'};
+	char pbuf[100] ={'\0'};
     
 	//srv_hostname = ksname; 
 	/* Create socket */
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
         #ifdef DBG
-	      perror("opening stream socket\n");
+	      perror("  opening stream socket\n");
         #endif
 	     *len = -1; 
          return NULL ; 
@@ -425,15 +420,27 @@ char * GetShares(char * srv_hostname, int port, int * len)
         *len = -1; 
         return NULL;   
 	}
-
+  
 	memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
 	server.sin_port = htons(port);
-    printf(" Connecting  to %s:%d .......\n", srv_hostname,port); 
+    
+    
+    #ifdef DBG
+     printf("    Connecting  to %s:%d .......",srv_hostname,port); 
+    #endif
 	if (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
-	      perror("connecting stream socket");
+        #ifdef DBG
+	      printf("  Connection was refused whilt trying to connect to: %d", port );
+        #endif
           *len = -1;
           return NULL ; 
 	}
+    
+    #ifdef DBG
+    printf("Connected\n"); 
+    printf("    Prepearing to send the request...\n"); 
+    #endif
+    
     
     /*
     * *************************************************************
@@ -449,28 +456,27 @@ char * GetShares(char * srv_hostname, int port, int * len)
     int cr2_len ; 
     char*  cr2= getCredentials(CR2,&cr2_len); 
        
-    #ifdef DBG
-        printf(" credential 1 length = %d \n", cr1_len);
-        //PrintChar(cr1, cr1_len); 
-        
-        printf(" credential 2 length = %d \n", cr2_len);
-       // PrintChar(cr2, cr2_len); 
-    #endif
+    #ifdef DDBG
+     printf("       credential 1 length = %d \n", cr1_len);
+     PrintChar(cr1, cr1_len); 
+     printf("       credential 2 length = %d \n", cr2_len);
+     PrintChar(cr2, cr2_len); 
+     #endif
         
     int pk_l ;
     char * pk = getpk(&pk_l);
        
-    #ifdef DBG    
-        printf(" pk length = %d \n", pk_l);
-        //PrintChar(pk, pk_l);  
-    #endif
+    #ifdef DDBG    
+     printf("       pk length = %d \n", pk_l);
+      PrintChar(pk, pk_l); 
+     #endif 
           
-    char * asrt = "topic=\"t1\"\n"\
-        "location=\"l1\"\n";  
+    char * asrt = "topic=\"car_loc\"\n"\
+        "location=\"munich\"\n";  
         
     int asrt_l = strlen(asrt); 
         
-    #ifdef DBG
+    #ifdef DDBG
         PrintChar(asrt, asrt_l); 
     #endif
     
@@ -478,8 +484,6 @@ char * GetShares(char * srv_hostname, int port, int * len)
     int cr_l = cr1_len + cr2_len; 
     int msg_l = sizeof (int)  + cr_l  +  sizeof(int) *2 + asrt_l+ sizeof (int)+  pk_l +  +sizeof (int); 
         
-        
-
         
     char *  msg= (char *)malloc(msg_l); 
     memset(msg,0,msg_l);
@@ -493,8 +497,8 @@ char * GetShares(char * srv_hostname, int port, int * len)
     memcpy(msg+3*sizeof(int)+ cr_l+ sizeof(int) + pk_l , &asrt_l, sizeof (int) ); 
     memcpy(msg+3*sizeof(int)+ cr_l+ sizeof(int) + pk_l + sizeof(int) , asrt, asrt_l); 
           
-    #ifdef DBG
-        printf(" Totla Message size = %d \n" , msg_l);
+    #ifdef DDBG
+        printf("        Totla Message size = %d \n" , msg_l);
     #endif
     
     int  sent =  0 ;
@@ -502,27 +506,21 @@ char * GetShares(char * srv_hostname, int port, int * len)
      while (remin >0 )
      {
         int s = write( sock, msg+sent , remin); 
-        #ifdef DBG
-            printf(" sent %d \n" , s );
-        #endif
+   
         sent += s; 
         remin -=s ; 
      }
-     
+    
+    #ifdef DBG
+            printf("       Sent\n");
+    #endif
     int re = 0; 
     char *  share = malloc (1024); 
     int result = read(sock, share, 1024);
-    #ifdef DBG
-        printf("result=<%s><%d>" ,  share, result ); 
-    #endif
-    
     close(sock);
     *len = result; 
     return share;
 }
-
-
-
 
 /*
  * Read Credentials 
@@ -536,12 +534,17 @@ char* getCredentials( char * path, int * len)
     fp= fopen(path,"r");
     if (fp == NULL)
     {
-        fprintf(stderr, "Credential file is missing ");
+        #ifdef DBG
+        fprintf(stderr, "       Credential file is missing\n");
+        #endif
         exit(1);
     }
     fseek(fp,0,SEEK_END);
     cre_Size = ftell(fp);
-    printf(" Credentials Size %d\n",cre_Size);
+    #ifdef DBG
+         printf("       Credentials Size %d\n",cre_Size);
+    #endif
+
     rewind(fp);
     result = malloc(cre_Size+1);
     fread(result,cre_Size,1,fp);
@@ -562,7 +565,7 @@ char* getpk(int * len)
     fp= fopen(SUBPK,"r");
     if (fp == NULL)
     {
-        fprintf(stderr, "Policy file is missing ");
+        fprintf(stderr, "       Public Key file is missing\n");
         exit(1);
     }
     fseek(fp,0,SEEK_END);

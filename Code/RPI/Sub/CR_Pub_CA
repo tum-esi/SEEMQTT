@@ -1,0 +1,21 @@
+Authorizer: "rsa-hex:30818902818100a87ceafaab9514f227fbb12b1d\
+            2e85d36423175f697840e4d169374389939c0d092b1970fbf\
+            fbe8c0e3f8c03e6a0279e90bb489aae523404e8abbdc993fc\
+            b77d5b539005559eeff23049e0fd2a0a9df2df824c0ae36c6\
+            3afb71e7640b89a5d37d6364b3b7a2c6691a0c1eb40bfc557\
+            e3093fc4e2677f8ad42ad29db64e8c9cdf0203010001"
+Licensees: "rsa-hex:30818902818100f111cf4d75b5f36bdedd5968d5\
+            9be24cb959bc74eb61a1006d2e02425264c5f5b7334eba322\
+            ee6a9f40268967c9e390820e415b3de75c6b48280b037b36a\
+            48a9b16051b2f88273b6e0f90fc528ad94164b968cd077249\
+            6fb40b86501846adfe4d21fc2ab45f7f50742e2f513519d0b\
+            095740e13261f92b3742ad056b71cb20d30203010001"
+Delegate: 1
+Conditions: topic == "car_loc" && location == "munich" -> "authorized";
+signature: 
+            "sig-rsa-sha1-hex:923f671abcb46459ed8aa9177781ecd\
+            4eaed85ef2d77056d565a6bf474b838d1258d3a341b831ba0\
+            b2fe6bafc368da883f67e9bc6b73a6874ce7bcc133faaccdb\
+            1145552ed145f8d2486075a01696471dedbf56771345aaf46\
+            77b8633a2c4cfcbeddb8f71c96a38d5845a8683c0aaddde68\
+            85d71575ca8fb9bb681faea6e9a6d"

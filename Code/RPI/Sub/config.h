@@ -18,7 +18,8 @@
 
 
 //#define CRYP_DBG
-#define DBG
+#define DBG  /*Debuging Messges */
+//#define DDBG /*Print more debuging messeges*/
 #define SELF_TEST
 #define TOPIC_SIZE 50
 #define BLOCK_SIZE 16
@@ -42,8 +43,9 @@
 
 
 /* Paths  and the name of the credentials, pk, asserts */ 
-#define CR2  "cred1"  // CR^(CA)_SUB
-#define CR1	 "cred2"  // CR(Pub)_(CA)
-#define SUBPK "sub_pk" //pkK_Sub
+#define CR1  "CR_Pub_CA"  // CR^(CA)_SUB
+#define CR2	 "CR_CA_Sub"  // CR(Pub)_(CA)
+#define SUBPK "pkK_Sub" //pkK_Sub
+
 
 #endif
