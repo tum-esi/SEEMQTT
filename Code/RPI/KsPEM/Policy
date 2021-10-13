@@ -1,9 +1,9 @@
 Authorizer: "POLICY"
-Licensees: "rsa-hex:30818902818100da12495925106c5b196d11f1a3\
-            341bb04f78f3449d674be33ea53314dd357fef111d7163b40\
-            e5644035a892b56bbe448701a27d42d7193ad358479a6665f\
-            79640e5ac0ec075035c36ac639b322dbc149bc288ff7fda77\
-            3ba253625eef82fbf987fe080838a973c5084f0e5490e0f47\
-            6039fee3c3cba472d46d62de8bcbd940590203010001"
+Licensees: "rsa-hex:30818902818100a87ceafaab9514f227fbb12b1d\
+            2e85d36423175f697840e4d169374389939c0d092b1970fbf\
+            fbe8c0e3f8c03e6a0279e90bb489aae523404e8abbdc993fc\
+            b77d5b539005559eeff23049e0fd2a0a9df2df824c0ae36c6\
+            3afb71e7640b89a5d37d6364b3b7a2c6691a0c1eb40bfc557\
+            e3093fc4e2677f8ad42ad29db64e8c9cdf0203010001"
 Delegate: 1
-Conditions: topic == "t1" && location == "l1" -> "authorized";
+Conditions: topic == "car_loc" && location == "munich" -> "authorized";

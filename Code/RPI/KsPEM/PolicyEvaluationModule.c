@@ -167,15 +167,19 @@ void Evaluate(int msgsock)
 
 char* ReadShare()
 {
-    char name[5];
-    sprintf(name, "%d.txt", ksid);
-    /* change this */
-    char path [124] ="/home/pi/Desktop/SSSS/" ;
-    strcat(path,name);
+     char name[5];
+    sprintf(name, "/%d.txt", ksid);
+    char path [124]={'\0'}; 
+    strcpy(path, SHARPATH);
+    strcat(path,name); 
     FILE *fptr;
     fptr = fopen(path,"r");
     if (fptr == NULL)
-    exit(EXIT_FAILURE);
+    {
+        #ifdef DBG
+        printf(" can not find file: %s \n", path); 
+        #endif
+    }
 
     char * line ;
     int len = 0 ;
