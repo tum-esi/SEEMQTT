@@ -9,6 +9,9 @@
  */ 
 void Initdb () 
 	{
+		#ifdef DDBG 
+		printf(" Initializing the DB...\n"); 
+		#endif
 		int i = 0 ; 
 		for (i = 0 ; i< MAXDBROW;  i++)
 			Initlst(db[i]); 
@@ -88,12 +91,12 @@ void SaveShar(int id, LIST lst)
     /* check if the path is exisiting*/
     struct stat st ={0}; 
     if (stat(SHARPATH, &st)==-1)
- 	mkdir(SHARPATH, 0700); 
+		mkdir(SHARPATH, 0700); 
     
    fptr = fopen(path,"w");
    if(fptr == NULL)
    {
-      printf("Error!");   
+      printf("Can not open file %s!\n", path);   
       exit(1);             
    }
 	int i = 0 ; 

@@ -2,9 +2,10 @@
 #ifndef TYP_H_
 #define TYP_H_
 
-#define CRYP_DBG
+
 #define DBG
-#define DBG_MSG
+//#define DDBG
+
 #define SELF_TEST
 #define TOPIC_SIZE 50
 #define BLOCK_SIZE 16

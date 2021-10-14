@@ -31,20 +31,16 @@ enum ENC_MODE {PKE, IBE};
 enum SHARING_MODE sharing_mode; 
 enum ENC_MODE enc_mode ; 
 
-//bool ibe_mode = false;
-//bool rsa_mode = false;
-//bool ksn_mode = false;
-//bool sss_mode = false;
+
 bool FLAG_ONCE = true;
 bool FLAG_ACK_TOPIC = false;
 
 #define QOS          0
 #define TIMEOUT     10000L
-#define SSS_PATH  "/home/pi/Desktop/SSSS/"
+
 
 
 LIST  lst ; 
-
 int id ; 
 
 const char* mqttServer =  "192.168.0.110";
@@ -66,6 +62,7 @@ unsigned char Didc[ELEMENT_LEN];
 
 
 unsigned char *iv = (unsigned char*)"012345678912345";
+
 /*
  * Read private key 
  */ 
@@ -76,13 +73,15 @@ void readprivk(char * path)
      int len  = 1024; 
     if(stat(path,&st)==0){
       len = st.st_size;
-     #ifdef CRYP_DBG
+     #ifdef DDBG
      printf(" len = %d\n", len); 
      #endif
     }
     fp = fopen(path, "r");
     if (fp == NULL){
+        #ifdef DBG
         printf("Could not open file %s",path);
+        #endif
         return ;
     }
     
@@ -93,7 +92,6 @@ void readprivk(char * path)
 int main(int argc, char* argv[]) {
     
 
-    
     if (argc >5 || argc <4 ) {
         printf ("Wrong number of argument\n");
         printf("ksibe ID  Enc_Mode [prK] Sharing_Mode\n");
@@ -110,7 +108,6 @@ int main(int argc, char* argv[]) {
     sprintf(KeyStoreID, "%d", id);
     sprintf(ks_ibe_id, "keystore%d@tum.com", id);
 
-    printf("key store ibe id: %s\n", ks_ibe_id);
     
     if (!strncmp(argv[2], "ibe", 3)){
        
@@ -129,7 +126,7 @@ int main(int argc, char* argv[]) {
             sharing_mode = SSS;
     }
     
-     // initie db 
+     /* initie db */
      Initdb();
      
     
@@ -148,38 +145,42 @@ int main(int argc, char* argv[]) {
         element_from_bytes(ibe_param_pub.P, p);
         element_from_bytes(ibe_param_pri.Km, km);
 
-        #ifdef DBG
+        #ifdef DDBG
         element_printf("++Km: %B\n", ibe_param_pri.Km);
         element_printf("++Kpub: %B\n", ibe_param_pub.Kpub);
         element_printf("++P:  %B\n", ibe_param_pub.P);
         #endif
 
-        #ifndef SELFTEST
+        #ifdef SELF_TEST
         ibe_extract(Didc);
+        
+        #ifdef DDBG
         printf("Didc: \n");
-        PrintHEX(Didc, ELEMENT_LEN);
+        BIO_dump_fp(stdout,Didc, ELEMENT_LEN);
         #endif
-
-        #ifdef SELFTEST
+         
         unsigned char testmsg[32] = {0};
 	    int fd = open("/dev/urandom",O_RDONLY);
 	    read(fd, testmsg, 32); 
 	    close(fd);
+        #ifdef DDBG
         printf("original message: \n");
-        PrintHEX(testmsg, 32);
+         BIO_dump_fp(stdout,testmsg, 32);
+         #endif
         unsigned char testcipher[32];
         unsigned char testplain[32];
         unsigned char testuc[ELEMENT_LEN];
         ibe_extract(Didc);
-
+        #ifdef DDBG
         printf("Didc: \n");
-        PrintHEX(Didc, 128);
-
+         BIO_dump_fp(stdout,Didc, 128);
+         #endif
         ibe_encryption(testmsg, 32, testcipher, testuc);
         ibe_decryption(testcipher, 32, testuc, Didc, testplain);
+        #ifdef DDBG
         printf("msg in plaintext: \n");
-        PrintHEX(testplain, 32);
-
+        BIO_dump_fp(stdout,testplain, 32);
+        #endif
         #endif
 
     }
@@ -187,8 +188,8 @@ int main(int argc, char* argv[]) {
     if (!enc_mode) {
         char *privk_path =  argv[3];
         readprivk(privk_path);
-        #ifdef CRYP_DBG  
-        printf(" private key :\n"); 
+        #ifdef DDBG 
+        printf("The KseyStroe private key:\n"); 
         printf("%s", ks_pr_key);
         #endif
 
@@ -200,8 +201,12 @@ int main(int argc, char* argv[]) {
     /** 
      *Start Mosquitto Client 
      */
-    printf("Starting Key Store %d \n", id);
-    printf("Waiting connection from IoT node ...\n");
+
+    
+    #ifdef DBG
+    printf("The KeyStroe ID is %s\n", ks_ibe_id);
+    printf("Starting KeyStore-%d...", id);
+    #endif
 
     struct mosquitto* mosq;
 
@@ -214,21 +219,30 @@ int main(int argc, char* argv[]) {
         rc = mosquitto_connect(mosq, mqttServer, mqttPort, 60);
         
         if (rc) {
+            #ifdef DBG
             printf("Error: %s \n", mosquitto_strerror(rc));
+            #endif
             mosquitto_destroy(mosq);
             mosquitto_lib_cleanup();
             return rc;
         }
-
+        #ifdef DBG
+            printf("Connected!\n");
+        #endif
         rc = mosquitto_subscribe(mosq, NULL, mqttConnTopic, 0);
+        #ifdef DBG
+            printf("KeyStore-%d subscribed to topic (%s)\n", id, mqttConnTopic);
+        #endif
 
         while (run) {
             if (rc) {
+                #ifdef DBG
                 printf("Failed to connect to the broker! Trying reconnect ... \n");
+                #endif
                 mosquitto_reconnect(mosq);
                 sleep(10);
             }
-
+            
             rc = mosquitto_loop(mosq, 0, 1);
         }
         
@@ -242,9 +256,10 @@ int main(int argc, char* argv[]) {
 
 void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *msg) {
 
-    printf("Receive message under topic: %s \n", msg->topic);
-    printf("Received message length: %d \n", msg->payloadlen);    
-
+    #ifdef DBG
+    printf("Received a message under topic (%s)\n", msg->topic);
+    printf("The the length of the received message is (%d)\n", msg->payloadlen);    
+    #endif
     int rc = 0;
 
     const char delimiter[2] = "/";
@@ -256,10 +271,13 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
     int hashlen = 32; 
     
     if (!strcmp(token3, "value") && !strcmp(token4, KeyStoreID)) {
-        printf("*************************************\n");
-        printf("*   Phase 1: negotiate master symetric key   *\n");
-        printf("*************************************\n");
-         
+        
+        #ifdef DBG
+        printf("***************************************\n");
+        printf("*Phase I:negotiate master symetric key*\n");
+        printf("***************************************\n");
+        #endif
+        
         memset(ack_topic, 0, TOPIC_SIZE);
         memcpy(ack_topic, base_topic, strlen(base_topic));
         memcpy(ack_topic + strlen(base_topic), token2, strlen(token2));
@@ -270,7 +288,7 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         memcpy(value_topic + strlen(base_topic), token2, strlen(token2));
         strcat(value_topic, "/value");
 
-        #ifdef DBG
+        #ifdef DDBG
         printf("Seperated topic: %s, length: %ld \n", token2, strlen(token2));
         printf("Generated acknowledgement topic: %s \n", ack_topic);
         #endif
@@ -280,8 +298,8 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         unsigned char iotpk[PKLEN]; 
         int len;
 
-        /* decrypt received message to get the  Master symmetric Key mk */
-        //IBE mode 
+        /* decrypt received message to get the  Master symmetric Key mk 
+         * IBE mode */
         if (enc_mode){
             int length = 2*BLOCK_SIZE;
             unsigned char Uc[ELEMENT_LEN];
@@ -290,13 +308,15 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             memcpy(cipher, msg->payload, 2*BLOCK_SIZE);
             memcpy(Uc, msg->payload + 2*BLOCK_SIZE, ELEMENT_LEN);
             memcpy(iotpk, msg->payload + 2*BLOCK_SIZE + ELEMENT_LEN, PKLEN);
-
+            
+            #ifdef DDBG
             printf("keync_enc: \n");
-            PrintHEX(cipher, 32);
+            BIO_dump_fp(stdout,cipher,32); 
             printf("Uc: \n");
-            PrintHEX(Uc, ELEMENT_LEN);
-            printf("iot pk key: \n");
-            PrintHEX(iotpk, PKLEN);
+            BIO_dump_fp(stdout,Uc,ELEMENT_LEN); 
+            printf("Publisher Public Key:\n");
+            BIO_dump_fp(stdout,iotpk,PKLEN);
+            #endif 
 
             ibe_decryption(cipher, length, Uc, Didc, plainmsg);
 
@@ -314,48 +334,52 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             memset(nonce, 0, NONCE_SIZE);
             memset(iotpk, 0, PKLEN);
             
-            #ifdef CRYP_DBG
-            printf("Received msg: ");
-            PrintHEX(msg->payload, msg->payloadlen);
+            #ifdef DDBG
+            printf("The received msg: ");
+            BIO_dump_fp(stdout,msg->payload,msg->payloadlen); 
             #endif
             
             size_t cipher_len = msg->payloadlen - PKLEN;
             memcpy(cipher, msg->payload, cipher_len);
-            
             memcpy(iotpk,  msg->payload+cipher_len, PKLEN); 
            
-            #ifdef CRYP_DBG
-            printf("Received IOT PK: ");
-            PrintHEX(iotpk, PKLEN);
+            #ifdef DDBG
+            printf("Received Publisher public Key:\n");
+            BIO_dump_fp(stdout,iotpk, PKLEN);
             #endif
 
             rc = rsa_decryption(cipher, cipher_len, ks_pr_key, plainmg);
             if (rc == -1) {
+                #ifdef DBG
                 printf("Failed to decrypt the rsa encrypted symmetric key! \n");
+                #endif
                 return ;
-            } else {
+            } 
+            else {
                 memcpy(ks_symm_key, plainmg, BLOCK_SIZE); 
                 memcpy (nonce,plainmg+BLOCK_SIZE,NONCE_SIZE);
             }
         }
 
-        #ifdef CRYP_DBG
-        printf("Received MKEY: ");
-        PrintHEX(ks_symm_key, BLOCK_SIZE);
-        
-        printf("Received Nonce: ");
-        PrintHEX(nonce, NONCE_SIZE);
-        #endif
-
-        #ifdef DBG
+        #ifdef DDBG
+        printf("Received MKEY:\n");
+        BIO_dump_fp(stdout,ks_symm_key, BLOCK_SIZE);
+        printf("Received Nonce:\n");
+        BIO_dump_fp(stdout,nonce, NONCE_SIZE);
         printf("decrypted symmetric key length: %d \n", rc);
         printf("decrypted symmetric key: ");
-        PrintHEX(ks_symm_key, BLOCK_SIZE);
-        printf("<<<<<<< Start ACK ENC >>>>>>> \n");
-        printf("iv used to encrypt nonce: ");
-        PrintHEX(iv, 16);  
+        BIO_dump_fp(stdout,ks_symm_key, BLOCK_SIZE);
         #endif
-        
+
+
+        #ifdef DBG 
+            printf("The master key was received succefully!\n");
+            printf("Prepear the acknowledgment....\n");
+        #endif
+        #ifdef DDBG 
+        printf("the IV used to encrypt nonce: ");
+        BIO_dump_fp(stdout,iv, 16);  
+        #endif
         
         unsigned char hpk[hashlen]; 
         
@@ -369,35 +393,38 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         unsigned char  plainack [akmsglen]; 
         unsigned char encak[akmsglen];
         
-        //H(pk) xor Nonce 
-         #ifdef CRYP_DBG
-        printf("HPK:"); 
-        PrintHEX(hpk, hashlen); 
-         
-        printf("nonce :"); 
-        PrintHEX(nonce,NONCE_SIZE);  
+        /*H(pk) xor Nonce */
+        #ifdef DDBG
+        printf("the H(pkK_Pub):\n"); 
+        BIO_dump_fp(stdout,hpk, hashlen); 
+        printf("The nonce:\n"); 
+        BIO_dump_fp(stdout,nonce,NONCE_SIZE);  
         #endif
         
         for (int i= 0 ; i< hashlen; i++)
             plainack[i] = hpk[i] ^ nonce [i %16]; 
             
-        #ifdef CRYP_DBG
+        #ifdef DDBG
         printf("XOR :"); 
-        PrintHEX(plainack,hashlen);  
+         BIO_dump_fp(stdout,plainack,hashlen);  
         #endif
                
         len = aes_encryption(plainack, akmsglen, ks_symm_key, iv, encak);
         if (len == -1) {
+            #ifdef DDBG
             printf("Failed to encrypt the nonce using KeyStore symmetric key! \n");
+            #endif
         } else {
-            printf("encrypted nonce length: %d \n", len);
+            #ifdef DDBG
+            printf("encrypted nonce length: %d\n", len);
+            #endif
         }
         
-        #ifdef CRYP_DBG
+        #ifdef DDBG
         printf("encrypted ACK: ");
-        PrintHEX(encak, len);
-        printf("<<<<<<<  END ACK ENC  >>>>>>> \n");
+        BIO_dump_fp(stdout,encak, len);
         #endif
+      
         
         /* Send encrypted nonce and iv back to client */
         unsigned char ack_message[MAX_TEXT_SIZE];
@@ -407,10 +434,9 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         memcpy(ack_message + len, iv, 16);
         ack_message[len + 16] = '\0';
         
-         #ifdef CRYP_DBG
-        printf("ack_message: \n");
-        PrintHEX(ack_message, len + 16);
-        printf("<<<<<<<  END ACK ENC  >>>>>>> \n");
+        #ifdef DDBG
+         printf("The Ack_message: \n");
+         BIO_dump_fp(stdout,ack_message, len + 16);
         #endif
         /* publish encrypted nonce back to client */
         char ackt[70]; 
@@ -418,37 +444,41 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         rc = mosquitto_publish(mosq, NULL, ackt, len + 17, ack_message, 0, false);
 
         if (rc != 0) {
+            #ifdef DBG
             printf("Error: %s \n", mosquitto_strerror(rc));
+            #endif
         } else {
-            printf("Published encrypted nonce! \n");
+            #ifdef DBG
+            printf("the Acknowledgment was Published! \n");
+            #endif
         }
-        
+
+
         /* update the lst*/ 
          int rid = AddsymK(hpk,ks_symm_key); 
-        #ifdef CRYP_DBG
+        #ifdef DBG
         if (rid != -1) {
-            printf(" The Master key was saved into db");
-            //Printlst(db[rid]); }
+            printf("The Master key was saved into db\n");
+            #ifdef DDBG
             Printdb(); 
+            #endif
         }
         else 
             printf(" Error, master key was not saved\n"); 
         #endif
-        
-        //memcpy(lst.hiot, hpk, HASH_LEN) ; 
-        //memcpy (lst.msymk, ks_symm_key, BLOCK_SIZE); 
-        //Printlst(lst); 
     }
 
     if (!strcmp(token3, "sk")&& !strcmp(token4, KeyStoreID)) {
+        
+        #ifdef DBG
         printf("**************************************\n");
         printf("*   Phase 2:  Topic Key Distribution *\n");
         printf("**************************************\n");
-        
+        #endif
         
         // Key splitting mode 
         if (!sharing_mode) {
-            #ifdef CRYP_DBG
+            #ifdef DBG 
             printf("**************************************\n");
             printf("*   Sharing Mode: Key splitting mode *\n");
             printf("**************************************\n");
@@ -459,57 +489,56 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             unsigned char rhpk[hashlen]; 
             unsigned char rht [hashlen]; 
             
-           
-            
             memcpy(EkSk, msg->payload, BLOCK_SIZE + 2 *  hashlen);
             memcpy(iv, msg->payload + BLOCK_SIZE+ 2 *  hashlen, BLOCK_SIZE);
 
-            #ifdef CRYP_DBG
-            printf("Received EkSK: ");
-            PrintHEX(EkSk, BLOCK_SIZE + 2 *  hashlen);
-            printf("Received iv: ");
-            PrintHEX(iv, BLOCK_SIZE);
+            #ifdef DDBG
+            printf("Received encrypted share:\n");
+            BIO_dump_fp(stdout,EkSk, BLOCK_SIZE + 2 *  hashlen);
+            printf("Received IV: ");
+            BIO_dump_fp(stdout,iv, BLOCK_SIZE);
             #endif
             
-            
-       
-        
             rc = aes_decryption(EkSk, BLOCK_SIZE+ 2 * hashlen, ks_symm_key, iv, dmsg);
                
             if (rc == -1) {
+                #ifdef DBG
                 printf("Failed to decrypt session key! \n");
+                #endif
             } else {
-                #ifdef CRYP_DBG
+                #ifdef DDBG
                 printf("Decrypted message: ");
-                PrintHEX(dmsg, rc);
+                 BIO_dump_fp(stdout,dmsg, rc);
                 #endif
                 
                 memcpy(session_key,dmsg, BLOCK_SIZE) ; 
                 memcpy(rhpk, dmsg + BLOCK_SIZE, hashlen); 
                 memcpy(rht, dmsg + BLOCK_SIZE+ hashlen, hashlen); 
                 
-                 #ifdef CRYP_DBG
-               
-                printf("Decrypted share Key: ");
-                PrintHEX(session_key, BLOCK_SIZE);
+                #ifdef DDBG
+                printf("Decrypted share Key:\n");
+                BIO_dump_fp(stdout,session_key, BLOCK_SIZE);
                 
-                printf("Decrypted hpk: ");
-                PrintHEX(rhpk, hashlen);
+                printf("Decrypted H(pkK_Pub):\n");
+                BIO_dump_fp(stdout,rhpk, hashlen);
                 
-                printf("Decrypted ht: ");
-                PrintHEX(rht, hashlen);
+                printf("Decrypted H(tp_i):\n");
+                BIO_dump_fp(stdout,rht, hashlen);
                 #endif
             }
         }
 
         // Shamir's Secret Sharing 
         if (sharing_mode) {
-             #ifdef CRYP_DBG
+             #ifdef DBG
             printf("**************************************\n");
             printf("*Sharing Mode: Shamir Secret Sharing *\n");
             printf("**************************************\n");
             #endif
-            PrintHEX(msg->payload,  3*BLOCK_SIZE + 2*hashlen +BLOCK_SIZE + BLOCK_SIZE );
+            #ifdef DDBG
+             printf(" The received Message:\n"); 
+             BIO_dump_fp(stdout,msg->payload,  3*BLOCK_SIZE + 2*hashlen +BLOCK_SIZE + BLOCK_SIZE );
+             #endif
             int mlen = 3*BLOCK_SIZE + hashlen;
             unsigned char EkSk[3*BLOCK_SIZE + hashlen];
             unsigned char iv[BLOCK_SIZE];
@@ -519,76 +548,68 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             unsigned char rht[hashlen];
             unsigned char rtag[hashlen];
             const char  * aad = "";
-            
-            
-             unsigned char msymK[BLOCK_SIZE] ; 
 
+            unsigned char msymK[BLOCK_SIZE] ; 
             memcpy(EkSk, msg->payload,  3*BLOCK_SIZE + hashlen);
             memcpy(iv,   msg->payload + 3*BLOCK_SIZE + hashlen, BLOCK_SIZE);
             memcpy(rtag, msg->payload + 3*BLOCK_SIZE + hashlen +BLOCK_SIZE, BLOCK_SIZE);
             memcpy(rhpk, msg->payload + 3*BLOCK_SIZE + hashlen +BLOCK_SIZE + BLOCK_SIZE , hashlen);
 
-            #ifdef CRYP_DBG
-            printf("Received EkSK: ");
-            PrintHEX(EkSk, 3*BLOCK_SIZE + hashlen);
-            printf("Received iv: ");
-            PrintHEX(iv, BLOCK_SIZE);
-               printf("Received tag: ");
-            PrintHEX(rtag, BLOCK_SIZE);
+            #ifdef DDBG
+            printf("Received encrypted share:\n");
+            BIO_dump_fp(stdout,EkSk, 3*BLOCK_SIZE + hashlen);
+            printf("Received IV:\n");
+            BIO_dump_fp(stdout,iv, BLOCK_SIZE);
+            printf("Received H(tp_i):\n");
+            BIO_dump_fp(stdout,rtag, BLOCK_SIZE);
             printf("Key to decrypt message: "); 
             PrintHEX(ks_symm_key,BLOCK_SIZE );
-            
-            printf("recived iotpk: "); 
-            PrintHEX(rhpk,HASH_LEN );
+            printf("Recived H(pkK_Pub):\n"); 
+            BIO_dump_fp(stdout,rhpk,HASH_LEN );
             #endif
 
-            
             /* Get the master symmetric key based on the H(iotpk) */ 
              int rowid = GetSymK(rhpk, msymK) ; 
-            #ifdef CRYP_DBG
+            #ifdef DDBG
              if (memcmp(msymK, ks_symm_key,BLOCK_SIZE)==0)
                 printf ("Key extracted succefully\n" ); 
             else 
                 printf (" Key extracted NOT succefully \n " ); 
-            
             #endif
             
             int res =   aes_gcm_decrypt(EkSk, mlen,(unsigned char *)aad, strlen(aad),rtag, msymK, iv, BLOCK_SIZE, dmsg); 
             
             if (rc == -1) {
+                #ifdef DBG 
                 printf("Failed to decrypt the shared secret! \n");
+                #endif
             } else {
-                #ifdef CRYP_DBG
+                #ifdef DDBG
                 printf("decrypted msg length: %d\n", rc);
                 printf("Decrypted message: \n");
-                PrintHEX(dmsg, rc);
+                BIO_dump_fp(stdout,dmsg, rc);
                 #endif
                 
                 memcpy(sss_share_key, dmsg, key_len);
                 memcpy(rht, dmsg + key_len , hashlen);
                 
-                
-
-                #ifdef CRYP_DBG
+                #ifdef DDBG
                 sss_share_key[key_len] = '\0';
-                printf("Decrypted share Key: ");
+                printf("Decrypted share Key:\n");
                 printf("%s", sss_share_key);
 
-                printf("Decrypted hpk: ");
-                PrintHEX(rhpk, hashlen);
+                printf("Decrypted hpk:\n");
+                BIO_dump_fp(stdout,rhpk, hashlen);
                 
-                printf("Decrypted ht: ");
-                PrintHEX(rht, hashlen);
+                printf("Decrypted ht:\n");
+                BIO_dump_fp(stdout,rht, hashlen);
                 #endif
                 
                 /* update the db to add the share*/ 
-                //memcpy(lst.shar, dmsg, key_len) ; 
-                //memcpy(lst.htpk, rht, HASH_LEN); 
-                // Printlst(lst); 
-                // SaveShar(id,lst); 
                 int rown = Addshare(rhpk,rht, dmsg); 
-                //Printlst(db[rown]); 
+                #ifdef DDBG
                 Printdb();
+                #endif
                 SaveShar(id,db[rown]); 
             }
         }
@@ -606,7 +627,9 @@ RSA* createRSA(unsigned char* key, int pubkey) {
     keybio = BIO_new_mem_buf(key, -1);
 
     if (keybio == NULL) {
+        #ifdef DDBG
         printf("Failed to create key BIO \n");
+        #endif
     } else if (pubkey) {
         rsa = PEM_read_bio_RSA_PUBKEY(keybio, &rsa, NULL, NULL);
     } else {
@@ -648,8 +671,10 @@ int rsa_decryption(unsigned char* enc_data, int data_len, unsigned char *key, un
 
 	
 void handleErrors()
-	{
-		printf("Error"); 		
+{
+    #ifdef DBG
+    printf("Error"); 
+    #endif		
 }
 
 /*
@@ -796,19 +821,25 @@ int aes_encryption(unsigned char* plaintext, int plaintext_len, unsigned char* k
 
     /* create and initialise the context */
     if (!(ctx = EVP_CIPHER_CTX_new())) {
+        #ifdef DDBG
         printf("ERROR 1: %ld \n", ERR_get_error());
+        #endif
         return -1;
     }
 
     if (1 != EVP_EncryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, iv)) {
+        #ifdef DDBG
         printf("ERROR 2: %ld \n", ERR_get_error());
+        #endif
     }
 
     EVP_CIPHER_CTX_set_padding(ctx, 0);
 
     /* encrypt message */
     if (1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len)) {
+        #ifdef DDBG
         printf("ERROR 3: %ld \n", ERR_get_error());
+        #endif
         return -1;
     }
 
@@ -816,7 +847,9 @@ int aes_encryption(unsigned char* plaintext, int plaintext_len, unsigned char* k
     
     /* finalise the encryption. Further ciphertext bytes may be written at this stage */
     if (1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len)) {
+        #ifdef DDBG
         printf("ERROR 4: %ld \n", ERR_get_error());
+        #endif
         return -1;
     }
 
@@ -901,14 +934,18 @@ int rsa_signature_verify(const unsigned char* m, unsigned int m_length,
 
 void ibe_extract(unsigned char *Didc) {
 
+    #ifdef DDBG
     printf("ibe extract start ... \n");
+    #endif
     unsigned char hash[HASH_LEN] = {0};
     element_t Qid, Did;
 
     element_init_G1(Qid, ibe_param_pub.pairing);
     element_init_G1(Did, ibe_param_pub.pairing);
   
+    #ifdef DDBG
     printf("extract id: %s\n", ks_ibe_id);
+    #endif
     openssl_hash((unsigned char *)ks_ibe_id, strlen(ks_ibe_id), hash);
 
     element_from_hash(Qid, hash, HASH_LEN);
@@ -917,8 +954,9 @@ void ibe_extract(unsigned char *Didc) {
 
     element_clear(Qid);
     element_clear(Did);
-
+    #ifdef DDBG
     printf("ibe extract end!\n");
+    #endif
 }
 
 
@@ -935,12 +973,15 @@ void ibe_encryption(unsigned char *plaintext, \
     element_init_Zr(r, ibe_param_pub.pairing);
 
     element_random(r);
-
+    #ifdef DDBG
     printf("ibe encryption start hashing\n");
+    #endif
 
     openssl_hash((unsigned char *)ks_ibe_id, strlen((char *)ks_ibe_id), hash);
 
+    #ifdef DDBG
     printf("ibe enc finish hashing\n");
+    #endif
 
     element_from_hash(Qid, hash, HASH_LEN);
     
@@ -951,7 +992,9 @@ void ibe_encryption(unsigned char *plaintext, \
     element_to_bytes(gs, gid);
 
     int gidlen = element_length_in_bytes(gid);
+    #ifdef DDBG
     printf("gid length: %d\n", gidlen);
+    #endif
    
     openssl_hash(gs, ELEMENT_LEN, hash) ;
     
@@ -977,7 +1020,9 @@ void ibe_encryption(unsigned char *plaintext, \
 int ibe_decryption(unsigned char *ciphertext, size_t ciphertext_len, \
                          unsigned char *Uc, unsigned char *Didc, unsigned char *plaintext) {
 
-    printf("ibe decryption start ...\n");    
+    #ifdef DDBG
+    printf("ibe decryption start ...\n");  
+    #endif  
 
     unsigned char *gs = NULL, hash[HASH_LEN] = {0};
     element_t U, Did, xt;
@@ -1012,7 +1057,9 @@ int ibe_decryption(unsigned char *ciphertext, size_t ciphertext_len, \
     element_clear(Did);
     element_clear(xt);
 
+    #ifdef DDBG 
     printf("ibe decryption end!\n");
+    #endif
 }
 
 /*
