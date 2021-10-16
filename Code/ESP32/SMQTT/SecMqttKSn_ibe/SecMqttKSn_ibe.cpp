@@ -44,12 +44,10 @@ SecMqtt::SecMqtt(Client& client) : PubSubClient(client) {
 void SecMqtt::SecConnect(const char *client_id) {
 
     /* connect client to broker */
-
     time_info.t_s = micros();
     connect(client_id);
-    while(!connected()) {}
-
     time_info.t_connect = micros() - time_info.t_s;
+    while(!connected()) {}
 
     if (this->_secmqtt_state == SECMQTT_KS_CONNECTED) {
 
@@ -82,7 +80,6 @@ void SecMqtt::SecConnect(const char *client_id) {
         #endif
 
         time_info.t_p11s = micros();
-
         for (int i = 0; i < KSN_NUM; i++) {
             /* generate the symertic master key*/
             sym_key_generator(ksn_list[i].masterkey);
@@ -93,7 +90,7 @@ void SecMqtt::SecConnect(const char *client_id) {
             memcpy(keync[i], ksn_list[i].masterkey, BLOCK_SIZE);
             memcpy(keync[i] + BLOCK_SIZE, ksn_list[i].nonce, BLOCK_SIZE);
 
-            #ifdef DBG_MSG
+            #ifdef DDBG
             Serial.printf("KS[%d]. masterkey: ", i);
             PrintHEX (ksn_list[i].masterkey, BLOCK_SIZE);
             Serial.printf("KS[%d]. nonce: ", i);
@@ -113,7 +110,7 @@ void SecMqtt::SecConnect(const char *client_id) {
         auto callback = std::bind(&SecMqtt::SecCallback, this, _1, _2, _3);
         setCallback(callback);
 
-        #ifdef DBG_MSG
+        #ifdef DDBG
         Serial.print("conn topic: ");
         Serial.println(this->_conn_topic);
         Serial.print("ack topic: ");
@@ -133,6 +130,9 @@ void SecMqtt::SecConnect(const char *client_id) {
          * - publish Enc(symKPub-ksi||nci, pk_ksi)||iot_pk_key to key store value topic
          * - subscribe to key store acknowledge topic
          */
+        unsigned long ibe_enc[KSN_NUM]= {0};
+        unsigned long ibe_pub[KSN_NUM]= {0};
+
         for (int i = 0; i < KSN_NUM; i++) {
             sprintf(ksn_list[i].value_topic, "%s/%d", this->_conn_topic, i + 1);
             sprintf(ksn_list[i].ack_topic, "%s/%d", this->_ack_topic, i + 1);
@@ -146,14 +146,14 @@ void SecMqtt::SecConnect(const char *client_id) {
             if (this->_ibe_mode) {
                 unsigned char Uc[ELEMENT_LEN];
 
-                time_info.t_s = micros();
+                //#TODO check 2*BLOCK_SIZE
+                unsigned long  starttime = micros();
                 int Uc_len = ibe_encryption(i, keync[i], 2*BLOCK_SIZE, keync_enc[i], Uc);
-                time_info.t_enc = micros() - time_info.t_s;
+                ibe_enc[i] = micros() - starttime ;
 
-                #ifdef DBG_MSG
+                #ifdef DDBG
                 Serial.println("keync_enc: ");
                 PrintHEX(keync_enc[i], 32);
-
                 Serial.printf("Uc lenght: %d\n", Uc_len);
                 Serial.println("Uc: ");
                 PrintHEX(Uc, Uc_len);
@@ -166,24 +166,25 @@ void SecMqtt::SecConnect(const char *client_id) {
                 memcpy(msg + 2*BLOCK_SIZE, Uc, Uc_len);
                 memcpy(msg + 2*BLOCK_SIZE + Uc_len, this->_iot_pk_key, this->_iot_pk_key_size);
 
-                time_info.t_s = micros();
+                unsigned long ibe_pub_s = micros();
                 beginPublish(ksn_list[i].value_topic, msg_len, false);
                 write((byte *)msg, msg_len);
                 endPublish();
-                time_info.t_send_pk = micros() - time_info.t_s;
+                ibe_pub[i] = micros() - ibe_pub_s;
 
                 time_info.t_recvs[i] = micros();
             }
         }
 
         time_info.t_p11 = micros() - time_info.t_p11s;
+        time_info.t_p11_publish = Median(ibe_pub,KSN_NUM);
+        time_info.t_ibe_enc =Median(ibe_enc,KSN_NUM);
 
         /* wait until received correct nonce from Key Store */
         unsigned long stime = millis();
         unsigned long etime;
 
         #ifdef DBG_MSG
-
         Serial.println("*************************************************");
         Serial.println("   Phase I-2: Reciving acknowledgements         ");
         Serial.println("*************************************************");
@@ -194,13 +195,17 @@ void SecMqtt::SecConnect(const char *client_id) {
         while(this->_secmqtt_state != SECMQTT_CONNECT_GOOD_NONCE) {
             etime = millis();
             if ((etime - stime) > SECMQTT_TIMEOUT) {
+                #ifdef DBG_MSG
                 cout << "Phase 1 connection timeout!" << endl;
+                #endif
                 this->_secmqtt_state = SECMQTT_CONNECTION_TIMEOUT;
                 return ;
             }
 
             if(this->_secmqtt_state == SECMQTT_CONNECT_BAD_NONCE) {
+              #ifdef DBG_MSG
                 Serial.println(this->_secmqtt_state);
+              #endif
                 return ;
             }
 
@@ -208,11 +213,12 @@ void SecMqtt::SecConnect(const char *client_id) {
         }
 
         #ifdef DBG_MSG
-        Serial.println("End Phase 1 successfully!");
+        Serial.println("Phase I was finished successfully!!");
         #endif
 
         this->_secmqtt_state = SECMQTT_KS_CONNECTED;
-        time_info.t_p2 = micros() - time_info.t_recvs[0];
+        //time_info.t_p2 = micros() - time_info.t_recvs[0];
+        time_info.t_p12 = micros() - time_info.t_p11;
     }
 
     SecSessionKeyUpdate();
@@ -260,9 +266,11 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     unsigned char tag[BLOCK_SIZE];
     size_t tag_len = BLOCK_SIZE;
 
+    unsigned long t_p3_enc =micros();
     int result = aes_gcm_encryption(msg, msg_len, this->_session_key, iv_tmp, Eskmsg, (const unsigned char*)auth_msg, (size_t)strlen(auth_msg), tag, tag_len);
+    time_info.t_p3_enc = micros() - t_p3_enc;
 
-    #ifdef DBG_MSG
+    #ifdef DDBG
     Serial.print("plantext user message: ");
     PrintHEX((unsigned char*)msg, msg_len);
     Serial.print("Encrypted user message: ");
@@ -286,37 +294,43 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     memcpy(mbuffer+2*BLOCK_SIZE, &length, sizeof(int));
     memcpy(mbuffer+2*BLOCK_SIZE +sizeof(int), Eskmsg, msg_len);
 
-    #ifdef DBG_MSG
+    #ifdef DDBG
     Serial.print("plantext user message: ");
     PrintHEX(mbuffer, mlen);
     #endif
+    unsigned long t_p3_enc_s =micros();
     beginPublish(topic,  mlen, false);
     write((byte*)mbuffer, mlen);
     endPublish();
-    this->_sk_counter += 1;
+   time_info.t_p3_pub = micros() - t_p3_enc_s;
+   this->_sk_counter += 1;
+
 
     #ifdef DBG_MSG
     Serial.printf("End Phase 3! #%d \n", this->_sk_counter);
     #endif
-
-    unsigned long t_e = micros();
+    time_info.t_p3_all = micros()-t_b;
 
     #ifdef TIME_MSG
-    Serial.printf("time publish message: %lu (us)\n", t_e - t_b);
+    Serial.printf("Time to Encrypte the message (EtM): %lu (us) \n", time_info.t_p3_enc);
+    Serial.printf("Time To publish the encrypted message: %lu (us)\n",time_info.t_p3_pub );
+    Serial.printf("Time To of Phase III: %lu (us)\n",time_info.t_p3_all );
     #endif
 }
 
 void SecMqtt::SecSessionKeyUpdate() {
 
-
+    time_info.t_p2_s = micros();
     unsigned long t_b = micros();
-
     #ifdef DBG_MSG
     Serial.println("**************************************");
     Serial.println("*   Phase II: Topic Key Distribution   *");
     Serial.println("**************************************");
     #endif
 
+
+    unsigned long t_shar_enc[KSN_NUM] = {0};
+    unsigned long t_share_pub[KSN_NUM] = {0};
     int rc = 0;
     this->_sk_counter = 0;
     unsigned char iv[BLOCK_SIZE];
@@ -326,7 +340,7 @@ void SecMqtt::SecSessionKeyUpdate() {
 
     sym_key_generator(this->_session_key);
 
-    #ifdef DBG_MSG
+    #ifdef DDBG
     Serial.print("Session Key: ");
     PrintHEX(this->_session_key, BLOCK_SIZE);
     #endif
@@ -339,15 +353,18 @@ void SecMqtt::SecSessionKeyUpdate() {
     }
       /* Shamir Secret Sharing*/
     if (this->_sss_mode) {
-        time_info.t_s = micros();
+        unsigned long sss_t  = micros();
         secmqtt_sss_split();
-        time_info.t_keysplit = micros() - time_info.t_s;
+        time_info.t_keysplit = micros() - sss_t;
     }
 
     /* Hashing the topic name  H(t_i) */
+    /*TODO Check DATA*/
     rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (const unsigned char *)DATA, strlen(DATA), this->_iot_data_hash);
     if (rc != 0) {
+        #ifdef DBG_MSG
         Serial.println("failed to hash DATA!");
+        #endif
     } else {
         #ifdef DBG_MSG
         Serial.println("successfully hash DATA!");
@@ -356,7 +373,7 @@ void SecMqtt::SecSessionKeyUpdate() {
 
     for (int i = 0; i< KSN_NUM; i++) {
         if (this->_ksn_mode) {
-            #ifdef DBG_MSG
+            #ifdef DDBG
             Serial.printf("shares: %d\n", i);
             PrintHEX(this->_shares[i], BLOCK_SIZE);
             #endif
@@ -372,12 +389,14 @@ void SecMqtt::SecSessionKeyUpdate() {
             memcpy(msg, this->_shares[i], BLOCK_SIZE);
             memcpy(msg + BLOCK_SIZE, this->_iot_data_hash, HASH_LEN);
 
-            time_info.t_s = micros();
+            unsigned long t_enc_s = micros();
             rc = aes_gcm_encryption(msg,BLOCK_SIZE + HASH_LEN,ksn_list[i].masterkey,iv_tmp,msg_enc, (unsigned char *)aad, strlen(aad), tag, BLOCK_SIZE);
-            //rc = aes_encryption(msg, BLOCK_SIZE + 2*HASH_LEN, ksn_list[i].masterkey, iv_tmp, msg_enc);
-            time_info.t_p3enc = micros() - time_info.t_s;
+            t_shar_enc[i] = micros() - t_enc_s;
+
             if (rc != 0) {
+              #ifdef DBG_MSG
                 Serial.println("Failed to encrypt the session key!");
+              #endif
                 return ;
             } else {
                 #ifdef DBG_MSG
@@ -391,21 +410,21 @@ void SecMqtt::SecSessionKeyUpdate() {
 
             sprintf(ksn_list[i].sk_topic, "%s/%d", this->_sk_topic, i + 1);
 
-            #ifdef DBG_MSG
+            #ifdef DDBG
             Serial.print("publish key shares to KeyStores under sk topic: ");
             Serial.println(ksn_list[i].sk_topic);
             #endif
 
-            time_info.t_s = micros();
+            unsigned long  t_pub_s = micros();
             beginPublish(ksn_list[i].sk_topic, m_len, false);
             write((byte *)buffer, m_len);
             endPublish();
-            time_info.t_p3send = micros() - time_info.t_s;
+            t_share_pub[i] = micros() - t_pub_s;
         }
 
         if (this->_sss_mode) {
 
-            #ifdef DBG_MSG
+            #ifdef DDBG
             Serial.printf("sss shares: %d\n", i);
             Serial.printf("%.*s\n", SSS_SIZE, this->_shares_sss[i]);
             #endif
@@ -424,30 +443,31 @@ void SecMqtt::SecSessionKeyUpdate() {
             memcpy(iv_tmp, iv, BLOCK_SIZE);
 
             memcpy(msg, this->_shares_sss[i], SSS_SIZE);
-            //memcpy(msg + SSS_SIZE, this->_iot_pk_key_hash, HASH_LEN);
             memcpy(msg + SSS_SIZE, this->_iot_data_hash, HASH_LEN);
             memset(msg + SSS_SIZE + HASH_LEN, padding, padding);
 
-            time_info.t_s = micros();
-            //rc = aes_encryption(msg, SSS_SIZE + 2*HASH_LEN + 9, ksn_list[i].masterkey, iv_tmp, msg_enc);
+            unsigned long t_enc_s = micros();
             rc = aes_gcm_encryption(msg, msglen,ksn_list[i].masterkey,iv_tmp,msg_enc, (unsigned char *)aad, strlen(aad), tag, BLOCK_SIZE);
-            time_info.t_p3enc = micros() - time_info.t_s;
+            t_shar_enc[i] = micros() - t_enc_s;
+            //time_info.t_p2_share_enc = micros() - time_info.t_s;
             if (rc != 0) {
+              #ifdef DBG_MSG
                 Serial.println("Failed to encrypt secret share key!");
+              #endif
                 return ;
-            } else {
-                #ifdef DBG_MSG
-                Serial.println("succeed to encrypt secret share key!");
-                Serial.printf("Encrypted message:\n");
-                PrintHEX(msg_enc, msglen);
-                Serial.printf("Tag:\n");
-                PrintHEX(tag, BLOCK_SIZE);
-                Serial.printf("IV:\n");
-                PrintHEX(iv, BLOCK_SIZE);
-                #endif
             }
-
-
+            else
+            {
+              #ifdef DDBG
+              Serial.println("succeed to encrypt secret share key!");
+              Serial.printf("Encrypted message:\n");
+              PrintHEX(msg_enc, msglen);
+              Serial.printf("Tag:\n");
+              PrintHEX(tag, BLOCK_SIZE);
+              Serial.printf("IV:\n");
+              PrintHEX(iv, BLOCK_SIZE);
+              #endif
+            }
             /**
                    **********************************************
                    * E_EtM(alpha_i, H(t_i))|iv|tag|H(iot_pk_key)*
@@ -465,21 +485,21 @@ void SecMqtt::SecSessionKeyUpdate() {
 
             sprintf(ksn_list[i].sk_topic, "%s/%d", this->_sk_topic, i + 1);
             #ifdef DBG_MSG
-            Serial.print("publish key shares to KeyStores under sk topic: ");
+            Serial.print(" share  was publihed to KeyStores\n");
+            #endif
+            #ifdef DDBG
             Serial.println(ksn_list[i].sk_topic);
             Serial.printf("Share [%d]\n", i );
             PrintHEX(msg, (int)SSS_SIZE);
-
             Serial.printf(" the buffer:\n");
             PrintHEX(buffer, (int)m_len);
             #endif
 
-
-            time_info.t_s = micros();
+            unsigned long  t_pub_s = micros();
             beginPublish(ksn_list[i].sk_topic, m_len, false);
             write((byte *)buffer, m_len);
             endPublish();
-            time_info.t_p3send = micros() - time_info.t_s;
+            t_share_pub[i] = micros() - t_pub_s;
 
         }
     }
@@ -491,25 +511,33 @@ void SecMqtt::SecSessionKeyUpdate() {
     unsigned char cr_buffer[cr_len];
     memcpy(cr_buffer, this->_iot_credntial, cr_len);
 
+    unsigned long cre_s = micros();
     beginPublish(CR,  cr_len, false);
     write((byte*)cr_buffer, cr_len);
     endPublish();
+    time_info.t_cred = micros() - cre_s;
+    time_info.t_p2 =micros() - time_info.t_p2_s; // asdd the time to sign the credential
 
-    #ifdef DBG_MSG
+
+    #ifdef DDBG
     Serial.printf(" signed credential: %s\n",cr_buffer );
     #endif
-    unsigned long t_ee = micros();
-    time_info.t_cred = t_ee - t_e;
-    time_info.t_p3 = t_e - t_b;
+
+    #ifdef DBG_MSG
+    Serial.printf("Phase II was finished successfully!\n");
+    #endif
+
+    time_info.t_p2_share_publsih =Median(t_share_pub,KSN_NUM);
+    time_info.t_p2_share_enc= Median(t_shar_enc, KSN_NUM);
 
     #ifdef TIME_MSG
-    Serial.printf("time key split: \t%lu (us)\n", time_info.t_keysplit);
-    Serial.printf("time key enc: \t\t%lu (us)\n", time_info.t_p3enc);
-    Serial.printf("time key send: \t\t%lu (us)\n", time_info.t_p3send);
-    //Serial.printf("time sign cred: \t%lu (us)\n", time_info.t_cred_sign);
-    Serial.printf("time cred: \t\t%lu (us)\n", time_info.t_cred);
-    Serial.printf("time phase 3: \t\t%lu (us)\n", time_info.t_p3);
-    Serial.printf("time phase 3 + cred: \t%lu (us)\n", time_info.t_p3 + time_info.t_cred);
+    Serial.printf("time to split: \t%lu (us)\n", time_info.t_keysplit);
+    Serial.printf("time key encrypt the share (AES-GCM): \t\t%lu (us)\n", time_info.t_p2_share_enc);
+    Serial.printf("time key publish the encrypted share: \t\t%lu (us)\n", time_info.t_p2_share_publsih);
+    Serial.printf("time sign the credential: \t%lu (us)\n", time_info.t_cred_sign);
+    Serial.printf("time to publish the credential: \t\t%lu (us)\n", time_info.t_cred);
+    Serial.printf("time Phase II: \t\t%lu (us)\n", time_info.t_p2);
+    Serial.printf("time phase II + cred: \t%lu (us)\n", time_info.t_p2 + time_info.t_cred_sign);
     #endif
 }
 
@@ -543,7 +571,7 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
         memcpy(msg_enc, payload, HASH_LEN);
         memcpy(iv, payload + HASH_LEN, BLOCK_SIZE);
 
-        #ifdef DBG_MSG
+        #ifdef DDBG
         Serial.print("Received iv: ");
         PrintHEX(iv, BLOCK_SIZE);
         Serial.print("Master key used to decrypt: ");
@@ -554,9 +582,9 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
 
         time_info.t_s = micros();
         rc = aes_decryption(msg_enc, HASH_LEN, ksn_list[ks_id].masterkey, iv, msg_dec);
-        time_info.t_dec = micros() - time_info.t_s;
+        time_info.t_p12_dec = micros() - time_info.t_s;
 
-        #ifdef DBG_MSG
+        #ifdef DDBG
         Serial.print("decrypted message: ");
         PrintHEX(msg_dec, HASH_LEN);
         #endif
@@ -568,7 +596,7 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
                 hpk[i] = ksn_list[ks_id].nonce[i%16] ^ msg_dec[i];
             }
 
-            #ifdef DBG_MSG
+            #ifdef DDBG
             Serial.print("received   hpk: ");
             PrintHEX(hpk, HASH_LEN);
             Serial.print("calculated hpk: ");
@@ -579,14 +607,16 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
                 ksn_list[ks_id].verified = true;
 
                 #ifdef DBG_MSG
-                Serial.println("hpk and nonce are equal\n");
+                Serial.println("acknowledgement was received and successfully evaluated!\n");
                 #endif
 
                 if (secmqtt_check_all_ksn_nonce_stat()) {
                     this->_secmqtt_state = SECMQTT_CONNECT_GOOD_NONCE;
                 }
             } else {
-                Serial.println("hpk and nonce are not equal\n");
+               #ifdef DBG_MSG
+                Serial.println("acknowledgement was received. But it was not correct!\n");
+                #endif
                 ksn_list[ks_id].verified = false;
                 this->_secmqtt_state = SECMQTT_CONNECT_BAD_NONCE;
             }
@@ -616,12 +646,30 @@ void SecMqtt::secmqtt_sss_split() {
     unsigned char str_tmp[BLOCK_SIZE + 1];
     memcpy(str_tmp, this->_session_key, BLOCK_SIZE);
     str_tmp[BLOCK_SIZE] = '\0';
-
     char *share = generate_share_strings((char *)str_tmp, KSN_NUM, SSS_T);
 
     for (int i = 0; i < KSN_NUM; i++) {
         memcpy(this->_shares_sss[i], share + i*SSS_SIZE, SSS_SIZE);
     }
+    free (share);
+}
+
+char *  SecMqtt::secmqtt_sss_split(unsigned char * key, int n , int t)
+{
+  /* using shamir secret sharing */
+  unsigned char str_tmp[BLOCK_SIZE + 1];
+  memcpy(str_tmp, key, BLOCK_SIZE);
+  str_tmp[BLOCK_SIZE] = '\0';
+  unsigned long s_t = micros();
+  char *share = generate_share_strings((char *)str_tmp, n, t);
+  Serial.printf("XXXXXXXXXXX Split time is %lu XXXXXXXXXXXX\n", micros()-s_t);
+
+  return share;
+}
+
+char * SecMqtt::secmqtt_sss_combine(const char * shares, int t)
+{
+   return extract_secret_from_share_strings(shares, t);
 }
 
 /* call plattform-specific  TRNG driver */
@@ -638,7 +686,9 @@ void SecMqtt::rsa_sign(const unsigned char * input, size_t P_SIZE, unsigned char
 
     error_code_pr =  mbedtls_pk_parse_key(&pr, this->_iot_pr_key, this->_iot_pr_key_size, NULL, NULL);
     if(error_code_pr != 0) {
+       #ifdef DBG_MSG
         cout << "READING PRIVATE KEY NOT SUCCESSFULL, error code: " << error_code_pr << endl;
+      #endif
         mbedtls_pk_free(&pr);
         return ;
     } else {
@@ -648,7 +698,9 @@ void SecMqtt::rsa_sign(const unsigned char * input, size_t P_SIZE, unsigned char
 
         hash_ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), input, P_SIZE, hash);
         if( hash_ret != 0 ) {
+          #ifdef DBG_MSG
             cout << "Calculating HASH not SUCCESSFULL, error code: " << hash_ret << endl;
+          #endif
             mbedtls_pk_free(&pr);
             return ;
         } else {
@@ -657,7 +709,9 @@ void SecMqtt::rsa_sign(const unsigned char * input, size_t P_SIZE, unsigned char
 
             sign_ret = mbedtls_pk_sign(&pr, MBEDTLS_MD_SHA256, hash, 0, sign, &olen, myrand, NULL);
             if (sign_ret != 0) {
+                #ifdef DBG_MSG
                 cout << "Sign not SUCCESSFULL" << endl;
+                #endif
                 mbedtls_pk_free(&pr);
                 return;
             } else {
@@ -679,12 +733,16 @@ void SecMqtt::sym_key_generator(unsigned char* symkey) {
 
     if( ( ret = mbedtls_ctr_drbg_seed( &ctr_drbg, myrand, &entropy,
         (unsigned char *) pers, strlen( pers ) ) ) != 0 ) {
+        #ifdef DBG_MSG
         printf( " failed\n ! mbedtls_ctr_drbg_init returned -0x%04x\n", -ret );
+        #endif
         return;
     }
 
     if( ( ret = mbedtls_ctr_drbg_random( &ctr_drbg, symkey, BLOCK_SIZE ) ) != 0 ) {
-        printf( " failed\n ! mbedtls_ctr_drbg_random returned -0x%04x\n", -ret );
+        #ifdef DBG_MSG
+          printf( " failed\n ! mbedtls_ctr_drbg_random returned -0x%04x\n", -ret );
+        #endif
         return;
     }
 }
@@ -747,13 +805,15 @@ int SecMqtt::aes_gcm_encryption(const unsigned char* input, size_t input_len, co
 
     rc = mbedtls_gcm_crypt_and_tag(&aes, MBEDTLS_GCM_ENCRYPT, input_len, iv, iv_len, add, add_len, input, output, tag_len, tag);
     if (rc != 0) {
+        #ifdef DBG_MSG
         Serial.printf("failed \n ! mbedtls_gcm_crypt_and_tag returned %d\n", rc);
+        #endif
         return -1;
     }
 
     mbedtls_gcm_free(&aes);
 
-    #ifdef DBG_MSG
+    #ifdef DDB
     Serial.println(" AES-GCM encryption was  perfromed successfulyl!  ");
     #endif
     return 0;
@@ -787,15 +847,19 @@ int SecMqtt::aes_gcm_decryption(const unsigned char* input, size_t input_len, co
     rc = mbedtls_gcm_auth_decrypt(&aes, input_len, iv, iv_len, add, add_len, tag, tag_len, input, output);
     if (rc != 0) {
         if (rc == MBEDTLS_ERR_GCM_AUTH_FAILED) {
+          #ifdef DBG_MSG
             Serial.printf("failed \n ! mbedtls_gcm_auth_decrypt authentication failed!\n", rc);
+          #endif
             return -1;
         }
+        #ifdef DBG_MSG
         Serial.printf("failed \n ! mbedtls_gcm_auth_decrypt returned %d\n", rc);
+        #endif
         return -1;
     }
 
     mbedtls_gcm_free(&aes);
-    #ifdef DBG_MSG
+    #ifdef DDBF
     Serial.println(" AES-GCM decryption  was  perfromed successfulyl!  ");
     #endif
     return 0;
@@ -814,10 +878,14 @@ void SecMqtt::secmqtt_set_iot_pk_key(const unsigned char* key, int key_size) {
     this->_iot_pk_key_size = key_size;
     int hash_ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), key, key_size, this->_iot_pk_key_hash);
     if (hash_ret != 0) {
+      #ifdef DBG_MSG
         Serial.println("failed to hash iot node public key!");
+        #endif
     } else {
-        Serial.println("successfully hash iot node public key!");
         #ifdef DBG_MSG
+        Serial.println("successfully hash iot node public key!");
+        #endif
+        #ifdef DDBG
         Serial.print("caculated hpk: ");
         PrintHEX(this->_iot_pk_key_hash, HASH_LEN);
         #endif
@@ -831,7 +899,7 @@ void SecMqtt::secmqtt_set_iot_pr_key(const unsigned char* key, int key_size) {
 }
 
 void SecMqtt::secmqtt_set_iot_credential(const unsigned char* cre, int cre_size) {
-  #ifdef DBG_MSG
+  #ifdef DDBG
   Serial.println("*  Setting up the credentila  *");
   #endif
     unsigned char * resu_cre ;
@@ -839,7 +907,7 @@ void SecMqtt::secmqtt_set_iot_credential(const unsigned char* cre, int cre_size)
     kn_GenCredential(cre,cre_size, this->_iot_pr_key, this->_iot_pr_key_size, &resu_cre, &r_len);
     this->_iot_credntial = resu_cre;
     this->_iot_credntial_size = r_len;
-    #ifdef DBG_MSG
+    #ifdef DDBG
     Serial.println(" The credential was generated.*");
     #endif
 
@@ -879,7 +947,9 @@ void SecMqtt::secmqtt_set_enc_mode(char *mode) {
 
             rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (unsigned char *)ksn_list[i].ibe_id, ksn_list[i].ibe_id_len, hash);
             if (rc != 0) {
+              #ifdef DBG_MSG
                 Serial.println("failed to hash key store ibe ID!");
+              #endif
             } else {
                 #ifdef DBG_MSG
                 Serial.println("successfully hash key store ibe ID!");
@@ -887,6 +957,8 @@ void SecMqtt::secmqtt_set_enc_mode(char *mode) {
             }
 
             element_from_hash(ksn_list[i].Qid, hash, HASH_LEN);
+            element_init_GT(ksn_list[i].Gid, ibe_param_pub.pairing);
+            element_pairing(ksn_list[i].Gid, ksn_list[i].Qid, ibe_param_pub.Kpub);
         }
     }
 }
@@ -894,8 +966,10 @@ void SecMqtt::secmqtt_set_enc_mode(char *mode) {
 void SecMqtt::secmqtt_set_ibe_id(const char*id, int idlen, int ksid) {
     ksn_list[ksid-1].ibe_id_len=idlen;
     memcpy(ksn_list[ksid-1].ibe_id, id, idlen);
+    #ifdef DDBG
     Serial.printf("ibe key size:%d\n", idlen);
     Serial.println(ksn_list[ksid-1].ibe_id);
+    #endif
 }
 
 int SecMqtt::ibe_encryption(int ks_id, unsigned char *plaintext, \
@@ -903,26 +977,25 @@ int SecMqtt::ibe_encryption(int ks_id, unsigned char *plaintext, \
 
     int rc = 0;
     unsigned char *gs = NULL, hash[HASH_LEN] = {0};
-    element_t r, U, gid;
+    element_t r, U;
 
-    /* Initialize parameters */
+    unsigned long t_ibe_s = micros();
     element_init_G1(U, ibe_param_pub.pairing);
-    element_init_GT(gid, ibe_param_pub.pairing);
     element_init_Zr(r, ibe_param_pub.pairing);
-
     element_random(r);
     element_mul_zn(U, ibe_param_pub.P, r);
-    element_pairing(gid, ksn_list[ks_id].Qid, ibe_param_pub.Kpub);
-    element_pow_zn(gid, gid, r);
+    element_pow_zn(ksn_list[ks_id].Gid, ksn_list[ks_id].Gid, r);
 
-    gs = (unsigned char *)malloc(element_length_in_bytes(gid));
-    element_to_bytes(gs, gid);
+    gs = (unsigned char *)malloc(element_length_in_bytes(ksn_list[ks_id].Gid));
+    element_to_bytes(gs, ksn_list[ks_id].Gid);
 
-    rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (const unsigned char *)gs, element_length_in_bytes(gid), hash);
+    rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (const unsigned char *)gs, element_length_in_bytes(ksn_list[ks_id].Gid), hash);
     if (rc != 0) {
+      #ifdef DBG_MSG
         Serial.println("failed to hash key store gs!");
+      #endif
     } else {
-        #ifdef DBG_MSG
+        #ifdef DDBG
         Serial.println("successfully hash key store gs!");
         #endif
     }
@@ -942,14 +1015,15 @@ int SecMqtt::ibe_encryption(int ks_id, unsigned char *plaintext, \
     free(gs);
     element_clear(r);
     element_clear(U);
-    element_clear(gid);
-
+    //element_clear(gid);
     return Uc_len;
 }
 
 void SecMqtt::secmqtt_set_secret_share_mode(char *mode) {
 
+    #ifdef DDBG
     Serial.printf("set key sharing mode to %s\n", mode);
+    #endif
 
     if (!strncmp(mode, "sss", 3)) {
         this->_sss_mode = true;
@@ -966,6 +1040,26 @@ void SecMqtt::PrintHEX(unsigned char* arr, int arr_size) {
         Serial.print(" ");
     }
     Serial.println();
+}
+
+unsigned long  SecMqtt:: Median(unsigned long arr[], int n)
+{
+  int i, j ;
+  unsigned long temp;
+  for (i= 0 ; i<n ; i++)
+  {
+    for (j= 0 ; j<n-i-1; j++)
+    {
+      if (arr[j]> arr[j+1])
+      {
+        temp = arr[j];
+        arr[j] = arr[j+1];
+        arr[j+1] = temp;
+      }
+    }
+  }
+  int index = (int)((n+1)/2) -1 ;
+  return arr[index];
 }
 
 

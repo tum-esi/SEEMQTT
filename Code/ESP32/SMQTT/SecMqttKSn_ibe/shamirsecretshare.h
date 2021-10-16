@@ -19,7 +19,7 @@ char *join_strings(char ** shares, int n);
 char *generate_share_strings(char * secret, int n, int t);
 void trim_trailing_whitespace(char * str);
 char * strtok_rr( char * str, const char * delim, char ** nextp);
-char * extract_secret_from_share_strings(const char * string);
+char * extract_secret_from_share_strings(const char * string, int t);
 
 #ifdef __cplusplus
 }
