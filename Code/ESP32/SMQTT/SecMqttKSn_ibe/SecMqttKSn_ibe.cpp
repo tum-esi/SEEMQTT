@@ -146,6 +146,7 @@ void SecMqtt::SecConnect(const char *client_id) {
             if (this->_ibe_mode) {
                 unsigned char Uc[ELEMENT_LEN];
 
+                //#TODO check 2*BLOCK_SIZE
                 unsigned long  starttime = micros();
                 int Uc_len = ibe_encryption(i, keync[i], 2*BLOCK_SIZE, keync_enc[i], Uc);
                 ibe_enc[i] = micros() - starttime ;
@@ -177,7 +178,7 @@ void SecMqtt::SecConnect(const char *client_id) {
 
         time_info.t_p11 = micros() - time_info.t_p11s;
         time_info.t_p11_publish = Median(ibe_pub,KSN_NUM);
-        time_info.t_ibe_enc =Median(ibe_enc,KSN_NUM); 
+        time_info.t_ibe_enc =Median(ibe_enc,KSN_NUM);
 
         /* wait until received correct nonce from Key Store */
         unsigned long stime = millis();
@@ -645,9 +646,7 @@ void SecMqtt::secmqtt_sss_split() {
     unsigned char str_tmp[BLOCK_SIZE + 1];
     memcpy(str_tmp, this->_session_key, BLOCK_SIZE);
     str_tmp[BLOCK_SIZE] = '\0';
-    unsigned long t = micros();
     char *share = generate_share_strings((char *)str_tmp, KSN_NUM, SSS_T);
-    Serial.printf("XXXXXXXXXXX Split time is %lu XXXXXXXXXXXX\n", micros()-t);
 
     for (int i = 0; i < KSN_NUM; i++) {
         memcpy(this->_shares_sss[i], share + i*SSS_SIZE, SSS_SIZE);
@@ -958,6 +957,8 @@ void SecMqtt::secmqtt_set_enc_mode(char *mode) {
             }
 
             element_from_hash(ksn_list[i].Qid, hash, HASH_LEN);
+            element_init_GT(ksn_list[i].Gid, ibe_param_pub.pairing);
+            element_pairing(ksn_list[i].Gid, ksn_list[i].Qid, ibe_param_pub.Kpub);
         }
     }
 }
@@ -976,22 +977,19 @@ int SecMqtt::ibe_encryption(int ks_id, unsigned char *plaintext, \
 
     int rc = 0;
     unsigned char *gs = NULL, hash[HASH_LEN] = {0};
-    element_t r, U, gid;
+    element_t r, U;
 
-    /* Initialize parameters */
+    unsigned long t_ibe_s = micros();
     element_init_G1(U, ibe_param_pub.pairing);
-    element_init_GT(gid, ibe_param_pub.pairing);
     element_init_Zr(r, ibe_param_pub.pairing);
-
     element_random(r);
     element_mul_zn(U, ibe_param_pub.P, r);
-    element_pairing(gid, ksn_list[ks_id].Qid, ibe_param_pub.Kpub);
-    element_pow_zn(gid, gid, r);
+    element_pow_zn(ksn_list[ks_id].Gid, ksn_list[ks_id].Gid, r);
 
-    gs = (unsigned char *)malloc(element_length_in_bytes(gid));
-    element_to_bytes(gs, gid);
+    gs = (unsigned char *)malloc(element_length_in_bytes(ksn_list[ks_id].Gid));
+    element_to_bytes(gs, ksn_list[ks_id].Gid);
 
-    rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (const unsigned char *)gs, element_length_in_bytes(gid), hash);
+    rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (const unsigned char *)gs, element_length_in_bytes(ksn_list[ks_id].Gid), hash);
     if (rc != 0) {
       #ifdef DBG_MSG
         Serial.println("failed to hash key store gs!");
@@ -1017,8 +1015,7 @@ int SecMqtt::ibe_encryption(int ks_id, unsigned char *plaintext, \
     free(gs);
     element_clear(r);
     element_clear(U);
-    element_clear(gid);
-
+    //element_clear(gid);
     return Uc_len;
 }
 

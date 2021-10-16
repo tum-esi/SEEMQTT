@@ -72,6 +72,7 @@ typedef struct tuples {
     char ack_topic[50];
     char sk_topic[50];
     element_t Qid;
+    element_t Gid ; 
 } ks_tuples_t;
 
 typedef struct time_message {
