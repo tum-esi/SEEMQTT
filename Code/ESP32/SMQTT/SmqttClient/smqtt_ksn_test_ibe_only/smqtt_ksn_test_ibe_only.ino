@@ -256,16 +256,16 @@ void setup() {
      tks3 = tack3 + tdec + tcmp done
   */
   Serial.printf("time connect: \t\t%lu (us)\n", mqttclient.time_info.t_connect);
-  Serial.printf("time enc: \t\t%lu (us)\n", mqttclient.time_info.t_enc);
-  Serial.printf("time send: \t\t%lu (us)\n", mqttclient.time_info.t_send_pk);
-  Serial.printf("time phase 1: \t\t%lu (us)\n", mqttclient.time_info.t_p11 + mqttclient.time_info.t_connect);
+  Serial.printf("time Ibe Enc: \t\t%lu (us)\n", mqttclient.time_info.t_ibe_enc);
+  Serial.printf("time send: \t\t%lu (us)\n", mqttclient.time_info.t_p11_publish);
+  Serial.printf("time Connect + phase 1-1: \t\t%lu (us)\n", mqttclient.time_info.t_p11 + mqttclient.time_info.t_connect);
 
   for (int i = 0; i < KSN_NUM; i++) {
     Serial.printf("time receive ack%d: \t%lu (us)\n", i+1, mqttclient.time_info.t_recv[i]);
   }
-  Serial.printf("time dec: \t\t%lu (us)\n", mqttclient.time_info.t_dec);
-  Serial.printf("time phase 2: \t\t%lu (us)\n", mqttclient.time_info.t_p2);
-  Serial.printf("time phase 1+2: \t\t%lu (us)\n", mqttclient.time_info.t_p2+mqttclient.time_info.t_p11 + mqttclient.time_info.t_connect);
+  Serial.printf("time dec: \t\t%lu (us)\n", mqttclient.time_info.t_p12_dec);
+  Serial.printf("time phase I-2: \t\t%lu (us)\n", mqttclient.time_info.t_p12);
+  Serial.printf("time phase I: \t\t%lu (us)\n", mqttclient.time_info.t_p12+mqttclient.time_info.t_p11 + mqttclient.time_info.t_connect);
   #endif
 }
 
@@ -282,10 +282,54 @@ void loop() {
     if(mqttclient.get_state() == SECMQTT_KS_CONNECTED) {
         Serial.printf("test %d\n", test_times);
         char * txt = "Hello world hii";
-        int len = 16 ;
+        int mlen = 16 ;
         //mqttclient.SecPublish(topic, mymsg, Size_Byte);
-        mqttclient.SecPublish(topic, (unsigned char *) txt, len);
+        mqttclient.SecPublish(topic, (unsigned char *) txt, mlen);
         test_times += 1;
+
+
+
+
+
+
+  int n = 3 ; 
+  int  t = 2 ; 
+  char shares_sss[n][SSS_SIZE];
+  unsigned char session_key[BLOCK_SIZE];
+
+  // fill the key 
+  mqttclient.sym_key_generator(session_key) ; 
+
+  dbgPrint(session_key, 0 , BLOCK_SIZE);
+
+   unsigned long start_s = micros();
+   char * share = mqttclient.secmqtt_sss_split(session_key,n,t); 
+   unsigned long end_s = micros();
+        
+    int lenshares = strlen(share); 
+    //Serial.printf("length is \n", lenshares);  
+    //Serial.printf("<<\n%s>>\n", share);  
+        
+     int len  = lenshares /n ; 
+     char * colectedshare = (char *)malloc (t* len +1);
+     memset(colectedshare, '\0', t* len +1); 
+     memcpy(colectedshare, share, t*len); 
+    // Serial.printf("<<\n%s>>\n", colectedshare); 
+
+
+     unsigned long start_j = micros();
+     char * extracted = mqttclient.secmqtt_sss_combine(colectedshare, t);
+     unsigned long end_j = micros();
+
+       //dbgPrint((unsigned char *)extracted, 0 , BLOCK_SIZE); 
+
+     //if (memcmp((void *)extracted, (void *)shares_sss, 16)==0)
+          Serial.printf("%d\t%d\t%d\t%d\t\%d\n", test_times, n , t, end_s - start_s, end_j -start_j); 
+       
+      
+       free(share);
+       free (extracted);
+       free (colectedshare);
     } else {
         mqttclient.SecConnect(clientId.c_str());
     }
