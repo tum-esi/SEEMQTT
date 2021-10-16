@@ -191,7 +191,7 @@ void SecMqtt::SecConnect(const char *client_id) {
         Serial.println("   Waiting for Key Stores to response ...        ");
         Serial.println("*************************************************");
         #endif
-
+        unsigned long t_p12_s = micros();
         while(this->_secmqtt_state != SECMQTT_CONNECT_GOOD_NONCE) {
             etime = millis();
             if ((etime - stime) > SECMQTT_TIMEOUT) {
@@ -218,8 +218,21 @@ void SecMqtt::SecConnect(const char *client_id) {
 
         this->_secmqtt_state = SECMQTT_KS_CONNECTED;
         //time_info.t_p2 = micros() - time_info.t_recvs[0];
-        time_info.t_p12 = micros() - time_info.t_p11;
+        time_info.t_p12 = micros() - t_p12_s;
     }
+
+    #ifdef TIME_MSG
+    Serial.printf("---------------------------------------------------------------------\n");
+    Serial.printf("Time to Connect:                                          \t%lu (us)\n", time_info.t_connect);
+    Serial.printf("Time to encrypt symertic master key using IBE (Median):   \t%lu (us)\n", time_info.t_ibe_enc);
+    Serial.printf("Time to publish the encrypted symertic master key(Median):\t%lu (us)\n", time_info.t_p11_publish);
+    Serial.printf("Time To finish Phase I-1:                                 \t%lu (us)\n", time_info.t_p11);
+    Serial.printf("---------------------------------------------------------------------\n");
+    Serial.printf("Time To Decrypte the acknowledgement (Median):            \t%lu (us)\n", time_info.t_p12_dec);
+    Serial.printf("Max time to Recive acknowledgment form KS:                \t%lu (us)\n", Max(time_info.t_recv, KSN_NUM) );
+    Serial.printf("time To finsh Phase I-2:                                  \t%lu (us)\n", time_info.t_p12);
+    Serial.printf("---------------------------------------------------------------------\n");
+    #endif
 
     SecSessionKeyUpdate();
 
@@ -1062,6 +1075,24 @@ unsigned long  SecMqtt:: Median(unsigned long arr[], int n)
   return arr[index];
 }
 
+unsigned long  SecMqtt:: Max(unsigned long arr[], int n)
+{
+  int i, j ;
+  unsigned long temp;
+  for (i= 0 ; i<n ; i++)
+  {
+    for (j= 0 ; j<n-i-1; j++)
+    {
+      if (arr[j]> arr[j+1])
+      {
+        temp = arr[j];
+        arr[j] = arr[j+1];
+        arr[j+1] = temp;
+      }
+    }
+  }
+  return arr[n-1];
+}
 
 unsigned char kpub_t[ELEMENT_LEN] = {
 0x33, 0x14, 0x25, 0x4B, 0x28, 0x8C, 0xEB, 0xDD, 0x0B, 0x3F, 0xDE, 0xCB, 0xF3, 0x61, 0x97, 0x77, 0x57, 0x42, 0xEE, 0x44, 0x61, 0xB4, 0x16, 0xDB, 0x4F, 0xA9, 0x7F, 0xCE, 0x80, 0x36, 0xD3, 0xCF, 0xB5, 0x1D, 0x3D, 0xD7, 0xC7, 0x78, 0x54, 0x1C, 0x1C, 0xF5, 0x10, 0x98, 0x08, 0x37, 0x78, 0x01, 0xC6, 0xB0, 0x87, 0x27, 0xC0, 0xC8, 0xA2, 0xE9, 0x7B, 0x2A, 0x67, 0x34, 0x2E, 0x90, 0x69, 0x04, 0x2A, 0xB8, 0x61, 0x04, 0xEE, 0x91, 0x9A, 0x3D, 0x26, 0xDA, 0x04, 0x20, 0x08, 0xD6, 0xF7, 0x19, 0x00, 0x15, 0x63, 0xF4, 0x65, 0x2F, 0x28, 0xE3, 0x38, 0xAB, 0xD9, 0x79, 0x60, 0xC3, 0x17, 0x07, 0xB2, 0xA8, 0x02, 0xE4, 0xF1, 0x0C, 0x26, 0xCE, 0x37, 0xA3, 0x57, 0xC2, 0x67, 0xA4, 0xBF, 0xB8, 0xAC, 0xEE, 0x74, 0x8C, 0x61, 0xEC, 0xCA, 0x70, 0x52, 0x25, 0xF9, 0xDC, 0x80, 0x20, 0x0D, 0x17};

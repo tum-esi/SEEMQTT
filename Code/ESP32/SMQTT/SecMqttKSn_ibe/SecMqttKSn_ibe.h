@@ -72,7 +72,7 @@ typedef struct tuples {
     char ack_topic[50];
     char sk_topic[50];
     element_t Qid;
-    element_t Gid ; 
+    element_t Gid ;
 } ks_tuples_t;
 
 typedef struct time_message {
@@ -172,6 +172,7 @@ class SecMqtt: public PubSubClient {
     int get_state();
     void PrintHEX(unsigned char* arr, int arr_size);
     unsigned long  Median(unsigned long arr[], int len);
+    unsigned long  Max(unsigned long arr[], int len);
     time_msg_t time_info;
 };
 
