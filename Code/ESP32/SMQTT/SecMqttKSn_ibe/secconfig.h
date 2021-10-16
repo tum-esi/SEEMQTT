@@ -13,6 +13,7 @@
 /* DEBUG FLAGS  */
 #define DBG_MSG
 #define TIME_MSG
+//#define DDBG
 
 /* KeyStore */
 #define KSN_NUM 3

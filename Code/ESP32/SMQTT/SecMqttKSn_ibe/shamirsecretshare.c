@@ -292,7 +292,7 @@ char *join_strings(char ** shares, int n) {
 * char * secret: the secret
 * int n: total number of KeyStores
 * int t: the thresould
-*/ 
+*/
 char *generate_share_strings(char * secret, int n, int t) {
 
     char ** result = (char **)split_string(secret, n, t);
@@ -308,7 +308,7 @@ char *generate_share_strings(char * secret, int n, int t) {
         sprintf(shares + i * key_len, "%s\n", result[i]);
     }
 
-    #ifdef DBG_MSG
+    #ifdef DDBG
     printf("%s\n",shares);
     #endif
     free_string_shares(result, n);
@@ -374,43 +374,48 @@ char * strtok_rr( char * str, const char * delim, char ** nextp) {
    extract_secret_from_share_strings() -- get a raw string, tidy it up
    into individual shares, and then extract secret
 */
-char * extract_secret_from_share_strings(const char * string) {
+char * extract_secret_from_share_strings(const char * string, int t) {
+  char ** shares = (char **) malloc(sizeof(char *) * 255);
 
-    char ** shares = (char **) malloc(sizeof(char *) * 255);
+  char * share;
+  char * saveptr = NULL;
+  int i = 0;
 
-    char * share;
-    char * saveptr = NULL;
-    int i = 0;
+  /* strtok_rr modifies the string we are looking at, so make a temp copy */
+  char * temp_string = (char *)strdup(string);
 
-    /* strtok_rr modifies the string we are looking at, so make a temp copy */
-    char * temp_string = (char *)strdup(string);
+  /* Parse the string by line, remove trailing whitespace */
+  share = strtok_rr(temp_string, "\n", &saveptr);
 
-    /* Parse the string by line, remove trailing whitespace */
-    share = strtok_rr(temp_string, "\n", &saveptr);
+  shares[i] = strdup(share);
+  trim_trailing_whitespace(shares[i]);
 
-    shares[i] = strdup(share);
-    trim_trailing_whitespace(shares[i]);
-
-    while ( (share = strtok_rr(NULL, "\n", &saveptr))) {
-        i++;
-
-        shares[i] = strdup(share);
-
-        trim_trailing_whitespace(shares[i]);
-
-        if ((shares[i] != NULL) && (strlen(shares[i]) == 0)) {
-
-            free(shares[i]);
-            i--;
-        }
-    }
-
+  while ( (share = strtok_rr(NULL, "\n", &saveptr))) {
     i++;
 
-    char * secret =(char *) join_strings(shares, i);
+    shares[i] = strdup(share);
 
-    free_string_shares(shares, i);
-    free(temp_string);
+    trim_trailing_whitespace(shares[i]);
 
-    return secret;
+    if ((shares[i] != NULL) && (strlen(shares[i]) == 0)) {
+
+      free(shares[i]);
+      i--;
+    }
+  }
+
+  i++;
+  if (i<t)
+  {
+    //Serial.printf("Error: the %d provided shares is leass than t (%d)\n" , i, t);
+    return NULL;
+  }
+
+ // Serial.printf( " join_strings %d\n", i);
+  char * secret =(char *) join_strings(shares, t);
+
+  free_string_shares(shares, i);
+  free(temp_string);
+
+  return secret;
 }

@@ -167,16 +167,16 @@ char *  kn_rsa_sign_md5(const unsigned char * input, int len, const unsigned cha
   int hashlen =  16 ;
   unsigned char hashval[hashlen];
 
-  #ifdef DBG_PRINT
-  //.println("Input Text");
+  #ifdef DDBG
+  println("Input Text");
   Print( (uint8_t *)input, 0 ,P_SIZE);
   #endif
 
   error_code_pr =  mbedtls_pk_parse_key(&pr, iot_pr_key, keylen,NULL,NULL);
   if( error_code_pr != 0)
   {
-    #ifdef DBG_PRINT
-    //Serial.println( "READING PRIVATE KEY NOT SUCCESSFULL");
+    #ifdef DDBG
+    Serial.println( "READING PRIVATE KEY NOT SUCCESSFULL");
     #endif
     mbedtls_pk_free(&pr);
     return NULL ;
