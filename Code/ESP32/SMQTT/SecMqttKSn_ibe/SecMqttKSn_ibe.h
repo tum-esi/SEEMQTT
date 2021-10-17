@@ -76,8 +76,12 @@ typedef struct tuples {
 } ks_tuples_t;
 
 typedef struct time_message {
+  unsigned long t_connect; // time to connectt_send_pk
   unsigned long t_s; //  the start of certain action.t_send_pk
+  unsigned long t_p1s; // the starting time of Phase I-1
   unsigned long t_p11s; // the starting time of Phase I-1
+  unsigned long t_p11_start[KSN_NUM]; // starting time to setup connection with ks_i
+  unsigned long t_p12_end[KSN_NUM]; // time after recieving the ack from ks_i
   unsigned long t_ibe_enc; //time to encrypt the  Symmetric master key using IBE
   unsigned long t_p11_publish; // time to Publish the master symmetric key
   unsigned long t_recvs[KSN_NUM]; // time after publishing the Symmetric master to the Br
@@ -85,6 +89,7 @@ typedef struct time_message {
   unsigned long t_recv[KSN_NUM]; //  the time between Publish the symertic master key and the receiving the acknowledgement of ks_i
   unsigned long t_p12_dec; // time to decrypt the acknowledgment
   unsigned long t_p12;   // time of phase I-2
+  unsigned long t_p1 ; //time of Phase I
   unsigned long t_p2_s ; //  Sarting time of Phase II
   unsigned long t_keysplit; // time to split the topic key
   unsigned long t_p2_share_enc; // time to encrypt share
@@ -92,15 +97,9 @@ typedef struct time_message {
   unsigned long t_cred; // time to  Publish credential
   unsigned long t_cred_sign; // time to sign the credential
   unsigned long t_p2; //totoal time of Phase II
-
   unsigned long t_p3_enc;  // time to encrypt the messgae
   unsigned long t_p3_pub; //time to publish the encrypted message
   unsigned long t_p3_all; // toatal time of Phase III
-
-  unsigned long t_connect; // time to connectt_send_pk
-
-    //time to check the ack . thin include the time to receive all acknowledgements
-    // time to generate and send all keys and start waiting for ack
 } time_msg_t;
 
 /*

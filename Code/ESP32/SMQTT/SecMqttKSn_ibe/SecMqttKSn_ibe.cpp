@@ -43,12 +43,16 @@ SecMqtt::SecMqtt(Client& client) : PubSubClient(client) {
 
 void SecMqtt::SecConnect(const char *client_id) {
 
+    unsigned long ibe_enc[KSN_NUM]= {0};
+    unsigned long ibe_pub[KSN_NUM]= {0};
     /* connect client to broker */
     time_info.t_s = micros();
     connect(client_id);
     time_info.t_connect = micros() - time_info.t_s;
     while(!connected()) {}
 
+    /* start Phase I-1*/
+    time_info.t_p1s = micros();
     if (this->_secmqtt_state == SECMQTT_KS_CONNECTED) {
 
     } else {
@@ -81,6 +85,9 @@ void SecMqtt::SecConnect(const char *client_id) {
 
         time_info.t_p11s = micros();
         for (int i = 0; i < KSN_NUM; i++) {
+
+
+
             /* generate the symertic master key*/
             sym_key_generator(ksn_list[i].masterkey);
             /*generate nonce */
@@ -130,10 +137,12 @@ void SecMqtt::SecConnect(const char *client_id) {
          * - publish Enc(symKPub-ksi||nci, pk_ksi)||iot_pk_key to key store value topic
          * - subscribe to key store acknowledge topic
          */
-        unsigned long ibe_enc[KSN_NUM]= {0};
-        unsigned long ibe_pub[KSN_NUM]= {0};
+
 
         for (int i = 0; i < KSN_NUM; i++) {
+          /* set the starting time */
+           time_info.t_p11_start[i]= micros();
+
             sprintf(ksn_list[i].value_topic, "%s/%d", this->_conn_topic, i + 1);
             sprintf(ksn_list[i].ack_topic, "%s/%d", this->_ack_topic, i + 1);
 
@@ -171,7 +180,9 @@ void SecMqtt::SecConnect(const char *client_id) {
                 write((byte *)msg, msg_len);
                 endPublish();
                 ibe_pub[i] = micros() - ibe_pub_s;
-
+                #ifdef DBG_MSG
+                Serial.printf("Key Published to  ks_%d\n",i);
+                #endif
                 time_info.t_recvs[i] = micros();
             }
         }
@@ -179,11 +190,11 @@ void SecMqtt::SecConnect(const char *client_id) {
         time_info.t_p11 = micros() - time_info.t_p11s;
         time_info.t_p11_publish = Median(ibe_pub,KSN_NUM);
         time_info.t_ibe_enc =Median(ibe_enc,KSN_NUM);
+          /* Phase I-1 was done */
+
 
         /* wait until received correct nonce from Key Store */
-        unsigned long stime = millis();
-        unsigned long etime;
-
+        unsigned long t_p12_s = micros();
         #ifdef DBG_MSG
         Serial.println("*************************************************");
         Serial.println("   Phase I-2: Reciving acknowledgements         ");
@@ -191,7 +202,8 @@ void SecMqtt::SecConnect(const char *client_id) {
         Serial.println("   Waiting for Key Stores to response ...        ");
         Serial.println("*************************************************");
         #endif
-        unsigned long t_p12_s = micros();
+        unsigned long stime = millis();
+        unsigned long etime;
         while(this->_secmqtt_state != SECMQTT_CONNECT_GOOD_NONCE) {
             etime = millis();
             if ((etime - stime) > SECMQTT_TIMEOUT) {
@@ -215,10 +227,12 @@ void SecMqtt::SecConnect(const char *client_id) {
         #ifdef DBG_MSG
         Serial.println("Phase I was finished successfully!!");
         #endif
-
         this->_secmqtt_state = SECMQTT_KS_CONNECTED;
-        //time_info.t_p2 = micros() - time_info.t_recvs[0];
+          //time_info.t_p2 = micros() - time_info.t_recvs[0];
         time_info.t_p12 = micros() - t_p12_s;
+        time_info.t_p1= micros() -  time_info.t_p1s ;
+
+
     }
 
     #ifdef TIME_MSG
@@ -229,9 +243,14 @@ void SecMqtt::SecConnect(const char *client_id) {
     Serial.printf("Time To finish Phase I-1:                                 \t%lu (us)\n", time_info.t_p11);
     Serial.printf("---------------------------------------------------------------------\n");
     Serial.printf("Time To Decrypte the acknowledgement (Median):            \t%lu (us)\n", time_info.t_p12_dec);
-    Serial.printf("Max time to Recive acknowledgment form KS:                \t%lu (us)\n", Max(time_info.t_recv, KSN_NUM) );
+    //Serial.printf("Max time to Recive acknowledgment form KS:                \t%lu (us)\n", Max(time_info.t_recv, KSN_NUM) );
     Serial.printf("time To finsh Phase I-2:                                  \t%lu (us)\n", time_info.t_p12);
     Serial.printf("---------------------------------------------------------------------\n");
+    Serial.printf("time To finsh Phase I:                                    \t%lu (us)\n", time_info.t_p1);
+    Serial.printf("---------------------------------------------------------------------\n");
+    Serial.printf("ID\tphase1_s\tEncrypt\tPublish\tend_p11\t Rcv_ack\t endp12\n");
+    for (int index = 0; index < KSN_NUM; index++)
+      Serial.printf("%d\t%lu\t%lu\t%lu\t%lu\t%lu\t%lu\n",index, time_info.t_p11_start[index],ibe_enc[index], ibe_pub[index],time_info.t_recvs[index], time_info.t_recv[index], time_info.t_p12_end[index]);
     #endif
 
     SecSessionKeyUpdate();
@@ -574,7 +593,8 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
 
         int ks_id = atoi(token4) - 1;
 
-        time_info.t_recv[ks_id] = micros() - time_info.t_recvs[ks_id];
+        //time_info.t_recv[ks_id] = micros() - time_info.t_recvs[ks_id];
+        time_info.t_recv[ks_id] =micros();
 
         unsigned char msg_enc[HASH_LEN];
         unsigned char msg_dec[HASH_LEN];
@@ -626,6 +646,7 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
                 if (secmqtt_check_all_ksn_nonce_stat()) {
                     this->_secmqtt_state = SECMQTT_CONNECT_GOOD_NONCE;
                 }
+                time_info.t_p12_end[ks_id] = micros();
             } else {
                #ifdef DBG_MSG
                 Serial.println("acknowledgement was received. But it was not correct!\n");
