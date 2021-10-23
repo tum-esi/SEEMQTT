@@ -271,37 +271,23 @@ void setup() {
 
 void loop() {
 
-  if (!mqttclient.connected()) {
-    reconnect();
-  }
-
-  unsigned long now = millis();
-  if (now - lastMsg > 10000) {
-    lastMsg = now;
-
-    if(mqttclient.get_state() == SECMQTT_KS_CONNECTED) {
-        Serial.printf("test %d\n", test_times);
-        char * txt = "Hello world hii";
-        int mlen = 16 ;
-        //mqttclient.SecPublish(topic, mymsg, Size_Byte);
-        mqttclient.SecPublish(topic, (unsigned char *) txt, mlen);
-        test_times += 1;
+  
 
 
 
 
-
-
-  int n = 3 ; 
-  int  t = 2 ; 
-  char shares_sss[n][SSS_SIZE];
   unsigned char session_key[BLOCK_SIZE];
 
   // fill the key 
   mqttclient.sym_key_generator(session_key) ; 
 
   dbgPrint(session_key, 0 , BLOCK_SIZE);
-
+  int n = 5 ; 
+  for (int t = 2 ; t<=n ; t++)
+  {
+  //int  t = 2 ; 
+for (int id = 0 ; id <100; id++)
+{
    unsigned long start_s = micros();
    char * share = mqttclient.secmqtt_sss_split(session_key,n,t); 
    unsigned long end_s = micros();
@@ -323,21 +309,14 @@ void loop() {
 
        //dbgPrint((unsigned char *)extracted, 0 , BLOCK_SIZE); 
 
-     //if (memcmp((void *)extracted, (void *)shares_sss, 16)==0)
-          Serial.printf("%d\t%d\t%d\t%d\t\%d\n", test_times, n , t, end_s - start_s, end_j -start_j); 
+     //if (memcmp((void *)extracted, (void *)share, 16)==0)
+          Serial.printf("%d\t%d\t%d\t%d\t\%d\n", id, n , t, end_s - start_s, end_j -start_j); 
        
       
        free(share);
        free (extracted);
        free (colectedshare);
-    } else {
-        mqttclient.SecConnect(clientId.c_str());
-    }
-
-    #ifdef RECON
-    mqttclient.disconnect();
-    #endif
+  }
   }
 
-  mqttclient.loop();
 }

@@ -13,7 +13,7 @@
 //Update these with values suitable for your network.
 const char* ssid = "TP-Link_904A";
 const char* password = "30576988";
-const char* mqtt_server = "192.168.0.110";
+const char* mqtt_server = "192.168.0.102";
 
 const int mqttPort = 1883;
 const char* topic = "iot_data";

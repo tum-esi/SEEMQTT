@@ -19,7 +19,7 @@ String clientId = "ESP32Clientclear-"; /* MQTT client ID (will add random hex su
 
 const char* WIFI_NETWORK = "TP-Link_904A";
 const char* WIFI_PASSWORD = "30576988";
-const char* MQTT_SERVER = "192.168.0.110"; 
+const char* MQTT_SERVER = "192.168.0.102"; 
 const int MQTT_PORT = 1883;
 const uint32_t WIFI_TIMEOUT_MS = 20000;
 unsigned long lastMsg = 0;
