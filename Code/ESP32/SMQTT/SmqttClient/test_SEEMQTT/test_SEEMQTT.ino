@@ -228,15 +228,6 @@ void setup() {
    */
   mqttclient.SecConnect(clientId.c_str());
 
-  //Serial.printf("time Connect + phase 1-1: \t\t%lu (us)\n", mqttclient.time_info.t_p11 + mqttclient.time_info.t_connect);
-
-  //for (int i = 0; i < KSN_NUM; i++) {
-    //Serial.printf("time receive ack%d: \t%lu (us)\n", i+1, mqttclient.time_info.t_recv[i]);
-  //}
-  //Serial.printf("time dec: \t\t%lu (us)\n", mqttclient.time_info.t_p12_dec);
-  //Serial.printf("time phase I-2: \t\t%lu (us)\n", mqttclient.time_info.t_p12);
-  //Serial.printf("time phase I: \t\t%lu (us)\n", mqttclient.time_info.t_p12+mqttclient.time_info.t_p11 + mqttclient.time_info.t_connect);
-
 }
 
 void loop() {
@@ -256,13 +247,13 @@ void loop() {
         //mqttclient.SecPublish(topic, mymsg, Size_Byte);
         mqttclient.SecPublish(topic, (unsigned char *) txt, mlen);
         test_times += 1;
-    } 
+    }
     else {
         mqttclient.SecConnect(clientId.c_str());
     }
 
     #ifdef RECON
-    mqttclient.disconnect();
+     mqttclient.disconnect();
     #endif
   }
 
