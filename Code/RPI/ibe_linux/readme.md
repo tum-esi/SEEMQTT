@@ -6,8 +6,8 @@ To use IBE on Linux machine, user needs to install gmp and pbc libraries.
 - #### Install libgmp-dev  and libssl-dev
 
   ```
-  sudo apt install libgmp3-dev
-  sudo apt install libssl-dev
+  $ sudo apt install libgmp3-dev
+  $ sudo apt install libssl-dev
   ```
 
 - #### Install pbc
@@ -18,8 +18,8 @@ To use IBE on Linux machine, user needs to install gmp and pbc libraries.
   - install flex and bison if you do not have them installed
 
 	  ```
-	  sudo apt-get install flex
-	  sudo apt-get install bison
+	  $ sudo apt-get install flex
+	  $ sudo apt-get install bison
 	  ```
 
   - Unzip the pbcXXXXX.gz file and then cd inside the unzipped folder
@@ -34,6 +34,6 @@ To use IBE on Linux machine, user needs to install gmp and pbc libraries.
 - Compile the test file
   `$ make`
 
-- Run the test
+- Run the program 
 
   `$ ./bfibe`
