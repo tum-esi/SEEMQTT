@@ -238,15 +238,15 @@ void SecMqtt::SecConnect(const char *client_id) {
     #ifdef TIME_MSG
     Serial.printf("---------------------------------------------------------------------\n");
     Serial.printf("Time to Connect:                                          \t%lu (us)\n", time_info.t_connect);
-    Serial.printf("Time to encrypt symertic master key using IBE (Median):   \t%lu (us)\n", time_info.t_ibe_enc);
-    Serial.printf("Time to publish the encrypted symertic master key(Median):\t%lu (us)\n", time_info.t_p11_publish);
-    Serial.printf("Time To finish Phase I-1:                                 \t%lu (us)\n", time_info.t_p11);
+    Serial.printf("Time to encrypt symmetric master key using IBE (Median):   \t%lu (us)\n", time_info.t_ibe_enc);
+    Serial.printf("Time to publish the encrypted symmetric master key(Median):\t%lu (us)\n", time_info.t_p11_publish);
+    Serial.printf("Time to finish Phase I-1:                                 \t%lu (us)\n", time_info.t_p11);
     Serial.printf("---------------------------------------------------------------------\n");
-    Serial.printf("Time To Decrypte the acknowledgement (Median):            \t%lu (us)\n", time_info.t_p12_dec);
+    Serial.printf("Time to decrypt the acknowledgement (Median):            \t%lu (us)\n", time_info.t_p12_dec);
     //Serial.printf("Max time to Recive acknowledgment form KS:                \t%lu (us)\n", Max(time_info.t_recv, KSN_NUM) );
-    Serial.printf("time To finsh Phase I-2:                                  \t%lu (us)\n", time_info.t_p12);
+    Serial.printf("Time to finish Phase I-2:                                  \t%lu (us)\n", time_info.t_p12);
     Serial.printf("---------------------------------------------------------------------\n");
-    Serial.printf("time To finsh Phase I:                                    \t%lu (us)\n", time_info.t_p1);
+    Serial.printf("Time to finish Phase I:                                    \t%lu (us)\n", time_info.t_p1);
     Serial.printf("---------------------------------------------------------------------\n");
     Serial.printf("ID\tphase1_s\tEncrypt\tPublish\tend_p11\t Rcv_ack\t endp12\n");
     for (int index = 0; index < KSN_NUM; index++)
@@ -345,8 +345,8 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
 
     #ifdef TIME_MSG
     Serial.printf("Time to Encrypte the message (EtM): %lu (us) \n", time_info.t_p3_enc);
-    Serial.printf("Time To publish the encrypted message: %lu (us)\n",time_info.t_p3_pub );
-    Serial.printf("Time To of Phase III: %lu (us)\n",time_info.t_p3_all );
+    Serial.printf("Time to publish the encrypted message: %lu (us)\n",time_info.t_p3_pub );
+    Serial.printf("Time to of Phase III: %lu (us)\n",time_info.t_p3_all );
     #endif
 }
 
@@ -564,7 +564,7 @@ void SecMqtt::SecSessionKeyUpdate() {
 
     #ifdef TIME_MSG
     Serial.printf("time to split: \t%lu (us)\n", time_info.t_keysplit);
-    Serial.printf("time key encrypt the share (AES-GCM): \t\t%lu (us)\n", time_info.t_p2_share_enc);
+    Serial.printf("time key encrypt the share -AES-GCM: \t\t%lu (us)\n", time_info.t_p2_share_enc);
     Serial.printf("time key publish the encrypted share: \t\t%lu (us)\n", time_info.t_p2_share_publsih);
     Serial.printf("time sign the credential: \t%lu (us)\n", time_info.t_cred_sign);
     Serial.printf("time to publish the credential: \t\t%lu (us)\n", time_info.t_cred);
@@ -590,7 +590,7 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
 
     if(!strcmp(token3, "ack")) {
         /* payload = hash(encrypted nonce + iv) */
-
+        time_info.t_s = micros();
         int ks_id = atoi(token4) - 1;
 
         //time_info.t_recv[ks_id] = micros() - time_info.t_recvs[ks_id];
@@ -615,7 +615,7 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
 
         time_info.t_s = micros();
         rc = aes_decryption(msg_enc, HASH_LEN, ksn_list[ks_id].masterkey, iv, msg_dec);
-        time_info.t_p12_dec = micros() - time_info.t_s;
+
 
         #ifdef DDBG
         Serial.print("decrypted message: ");
@@ -624,7 +624,9 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
 
         if (rc != 0) {
             cout << "Failed to decrypt the nonce! \n";
-        } else {
+        }
+        else
+         {
             for (int i = 0; i < HASH_LEN; i++) {
                 hpk[i] = ksn_list[ks_id].nonce[i%16] ^ msg_dec[i];
             }
@@ -646,15 +648,21 @@ void SecMqtt::SecCallback(char* topic, uint8_t* payload, unsigned int payload_le
                 if (secmqtt_check_all_ksn_nonce_stat()) {
                     this->_secmqtt_state = SECMQTT_CONNECT_GOOD_NONCE;
                 }
-                time_info.t_p12_end[ks_id] = micros();
-            } else {
+
+
+            }
+            else
+             {
                #ifdef DBG_MSG
                 Serial.println("acknowledgement was received. But it was not correct!\n");
                 #endif
                 ksn_list[ks_id].verified = false;
                 this->_secmqtt_state = SECMQTT_CONNECT_BAD_NONCE;
             }
+
         }
+        time_info.t_p12_dec = micros() - time_info.t_s;
+        time_info.t_p12_end[ks_id] = micros();
     }
 }
 
@@ -696,7 +704,7 @@ char *  SecMqtt::secmqtt_sss_split(unsigned char * key, int n , int t)
   str_tmp[BLOCK_SIZE] = '\0';
   unsigned long s_t = micros();
   char *share = generate_share_strings((char *)str_tmp, n, t);
-  Serial.printf("XXXXXXXXXXX Split time is %lu XXXXXXXXXXXX\n", micros()-s_t);
+  //Serial.printf("XXXXXXXXXXX Split time is %lu XXXXXXXXXXXX\n", micros()-s_t);
 
   return share;
 }
@@ -901,7 +909,10 @@ int SecMqtt::aes_gcm_decryption(const unsigned char* input, size_t input_len, co
 int SecMqtt::get_state() {
     return this->_secmqtt_state;
 }
-
+// this is used for test purpose only
+int SecMqtt::set_state(int state) {
+    this->_secmqtt_state = state;
+}
 void SecMqtt::secmqtt_set_cred(const unsigned char* cred) {
     this->_cred = cred;
 }
@@ -936,15 +947,16 @@ void SecMqtt::secmqtt_set_iot_credential(const unsigned char* cre, int cre_size)
   #ifdef DDBG
   Serial.println("*  Setting up the credentila  *");
   #endif
-    unsigned char * resu_cre ;
-    int r_len = 0;
-    kn_GenCredential(cre,cre_size, this->_iot_pr_key, this->_iot_pr_key_size, &resu_cre, &r_len);
-    this->_iot_credntial = resu_cre;
-    this->_iot_credntial_size = r_len;
-    #ifdef DDBG
-    Serial.println(" The credential was generated.*");
-    #endif
-
+  unsigned char * resu_cre ;
+  int r_len = 0;
+  unsigned long st= micros();
+  kn_GenCredential(cre,cre_size, this->_iot_pr_key, this->_iot_pr_key_size, &resu_cre, &r_len);
+  time_info.t_cred_sign = micros()-st;
+  this->_iot_credntial = resu_cre;
+  this->_iot_credntial_size = r_len;
+  #ifdef DDBG
+  Serial.println(" The credential was generated.*");
+  #endif
 }
 
 bool SecMqtt::secmqtt_check_all_ksn_nonce_stat() {
@@ -972,27 +984,35 @@ void SecMqtt::secmqtt_set_enc_mode(char *mode) {
         element_from_bytes(ibe_param_pub.Kpub, kpub_t);
         element_from_bytes(ibe_param_pub.P, p_t);
 
-        /* calculate one-time cost Qid */
+        /* calculate one-time overhead Qid */
         int rc = 0;
         unsigned char hash[HASH_LEN] = {0};
 
         for (int i = 0; i < KSN_NUM; i++) {
+            unsigned long qid_s = micros();
             element_init_G1(ksn_list[i].Qid, ibe_param_pub.pairing);
 
             rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (unsigned char *)ksn_list[i].ibe_id, ksn_list[i].ibe_id_len, hash);
+
             if (rc != 0) {
               #ifdef DBG_MSG
                 Serial.println("failed to hash key store ibe ID!");
               #endif
+
             } else {
                 #ifdef DBG_MSG
                 Serial.println("successfully hash key store ibe ID!");
                 #endif
+
             }
 
             element_from_hash(ksn_list[i].Qid, hash, HASH_LEN);
             element_init_GT(ksn_list[i].Gid, ibe_param_pub.pairing);
             element_pairing(ksn_list[i].Gid, ksn_list[i].Qid, ibe_param_pub.Kpub);
+            time_info.t_ibe_oto = micros() -qid_s;
+            #ifdef TIME_MSG
+              Serial.printf("Time to calculat Qid of ks[%d]:     \t%lu (us)\n", i+1,time_info.t_ibe_oto );
+            #endif
         }
     }
 }

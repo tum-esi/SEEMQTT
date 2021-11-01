@@ -2,7 +2,7 @@
 #include <SecMqttKSn_ibe.h>
 
 /* print the time measurment */
-#define TIME_DEBUG
+//#define TIME_DEBUG
 #define DBG_MSG
 
 #define BUILTIN_LED 2
@@ -97,53 +97,6 @@ const unsigned char cr[] = \
 WiFiClient espClient;
 SecMqtt mqttclient(espClient);
 
-/*
- * call plattform-specific  TRNG driver
- */
-static int myrand(void *rng_state, unsigned char *output, size_t len)
-{
-    size_t olen;
-    return mbedtls_hardware_poll(rng_state, output, len, &olen);
-}
-
-
-/*
- *  adjust the length of the ciphered text
- */
-void bufferSize(char* text, int &length)
-{
-  int i = strlen(text);
-  int buf = round(i / BLOCK_SIZE) * BLOCK_SIZE;
-  // length = (buf <= i) ? buf + BLOCK_SIZE : length = buf;
-  length = (buf <= i) ? buf + BLOCK_SIZE : buf;
-}
-
-/*
-* rand_string:  fill a memeory with ranom values
-*/
-static uint8_t  *rand_string(uint8_t  *str, size_t size) {
-  const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXZY";
-  if (size) {
-    --size;
-    for (size_t n = 0; n < size; n++) {
-      int key = rand() % 16;
-      str[n] = key;
-    }
-  }
-  return str;
-}
-
-/*
-Allocate memory and fill it with random value. size determines the size of the required memeory
-*/
-uint8_t* rand_string_alloc(size_t size) {
-  uint8_t* s =(uint8_t  *) malloc(size);
-  if (s) {
-    rand_string(s, size);
-  }
-  return s;
-}
-
 
 void setup_wifi() {
     delay(10);
@@ -213,12 +166,11 @@ void dbgPrint(uint8_t * arr, int beg ,int size) {
 }
 
 void setup() {
-  //pinMode(BUILTIN_LED, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
+  
   pinMode(13, OUTPUT);
   Serial.begin(115200);
 
   setup_wifi();
-  mymsg = rand_string_alloc(Size_Byte);
 
   clientId += String(random(0xffff), HEX);
 
@@ -231,8 +183,6 @@ void setup() {
   mqttclient.secmqtt_set_ibe_id(ks_ibe_id1, strlen(ks_ibe_id1),1);
   mqttclient.secmqtt_set_ibe_id(ks_ibe_id2, strlen(ks_ibe_id2),2);
   mqttclient.secmqtt_set_ibe_id(ks_ibe_id3, strlen(ks_ibe_id3),3);
- // mqttclient.secmqtt_set_ibe_id(ks_ibe_id4, strlen(ks_ibe_id4),4);
- // mqttclient.secmqtt_set_ibe_id(ks_ibe_id5, strlen(ks_ibe_id5),5);
   mqttclient.secmqtt_set_enc_mode("ibe");
   mqttclient.secmqtt_set_secret_share_mode("sss");
 
@@ -242,7 +192,7 @@ void setup() {
    * 1. connection to Key Store will be done only once during setup
    * 2. session key will be updated once during setup
    */
-  mqttclient.SecConnect(clientId.c_str());
+  //mqttclient.SecConnect(clientId.c_str());
 
   #ifdef TIME_DEBUG
   // phase1: connect to broker + tenc + tsend + tothers
@@ -267,25 +217,24 @@ void setup() {
   Serial.printf("time phase I-2: \t\t%lu (us)\n", mqttclient.time_info.t_p12);
   Serial.printf("time phase I: \t\t%lu (us)\n", mqttclient.time_info.t_p12+mqttclient.time_info.t_p11 + mqttclient.time_info.t_connect);
   #endif
-}
 
-void loop() {
-
-  
-
-
-
-
-  unsigned char session_key[BLOCK_SIZE];
+  Serial.print("***************************************************"); 
+ unsigned char session_key[BLOCK_SIZE];
 
   // fill the key 
   mqttclient.sym_key_generator(session_key) ; 
 
   dbgPrint(session_key, 0 , BLOCK_SIZE);
-  int n = 5 ; 
-  for (int t = 2 ; t<=n ; t++)
-  {
-  //int  t = 2 ; 
+
+
+ // for (int n =5; n<16; n+=5)
+  //{
+
+
+ // for (int n = 2 ; n<=15 ; n++)
+  //{
+  int n = 15; 
+  int  t = 7; 
 for (int id = 0 ; id <100; id++)
 {
    unsigned long start_s = micros();
@@ -317,6 +266,13 @@ for (int id = 0 ; id <100; id++)
        free (extracted);
        free (colectedshare);
   }
-  }
+ // }
+ // }
+}
+
+void loop() {
+
+
+ 
 
 }

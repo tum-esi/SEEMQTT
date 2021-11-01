@@ -83,6 +83,7 @@ typedef struct time_message {
   unsigned long t_p11_start[KSN_NUM]; // starting time to setup connection with ks_i
   unsigned long t_p12_end[KSN_NUM]; // time after recieving the ack from ks_i
   unsigned long t_ibe_enc; //time to encrypt the  Symmetric master key using IBE
+  unsigned long t_ibe_oto; //time to calculate the ID that are used in IBE encryption. This is one time overhead
   unsigned long t_p11_publish; // time to Publish the master symmetric key
   unsigned long t_recvs[KSN_NUM]; // time after publishing the Symmetric master to the Br
   unsigned long t_p11;   // Phase I-1  timw (T_{PhaseI-1})
@@ -169,6 +170,7 @@ class SecMqtt: public PubSubClient {
     void secmqtt_set_ibe_id(const char*id, int idlen, int ksid);
     bool secmqtt_check_all_ksn_nonce_stat();
     int get_state();
+    int set_state(int i);
     void PrintHEX(unsigned char* arr, int arr_size);
     unsigned long  Median(unsigned long arr[], int len);
     unsigned long  Max(unsigned long arr[], int len);
