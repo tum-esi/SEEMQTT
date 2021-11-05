@@ -275,13 +275,16 @@ main(int argc, char **argv)
       struct sockaddr_in server;
       int msgsock;
       int i;
+
       if (argc != 3)
       {
-        printf("Wrong number of parameters. KeyStore ID and the Port should be provided: PEM ID Port \n");
-        return -1;
+          printf("Wrong number of arguments. You must enter the KeyStore ID and the Port number as follow:\n" );
+          printf("./PEM   ID  Port\n");
+          return -1;
       }
+
 	  /* Get KS number */
-	   ksid = atoi(argv[1]);
+	  ksid = atoi(argv[1]);
 
       /* Get the port number */
       int SRV_PORT = atoi(argv[2]);
@@ -317,9 +320,13 @@ main(int argc, char **argv)
 		msgsock = accept(sock, 0, 0);
 		if (msgsock == -1)
 			perror("accept");
-		Evaluate(msgsock);
-	        close(msgsock);
-      } while (TRUE);
+    clock_t start = clock();
+    Evaluate(msgsock);
+    clock_t end = clock();
+    double ev_T= ((double)(end -start))/CLOCKS_PER_SEC ;
+    printf("Time to evaluate the credential = %f (ms) \n", ev_T * 1000);
+    close(msgsock);
+    } while (TRUE);
 /*
  * Since this program has an infinite loop, the socket "sock" is
  * never explicitly closed.  However, all sockets will be closed

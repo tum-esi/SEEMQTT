@@ -204,7 +204,7 @@ void dbgPrint(uint8_t * arr, int beg ,int size) {
 void setup() {
   Serial.begin(115200);
   setup_wifi();
-  mymsg = rand_string_alloc(Size_Byte);
+ // mymsg = rand_string_alloc(Size_Byte);
 
   clientId += String(random(0xffff), HEX);
   mqttclient.setServer(mqtt_server, mqttPort);
@@ -215,8 +215,8 @@ void setup() {
   mqttclient.secmqtt_set_ibe_id(ks_ibe_id1, strlen(ks_ibe_id1),1);
   mqttclient.secmqtt_set_ibe_id(ks_ibe_id2, strlen(ks_ibe_id2),2);
   mqttclient.secmqtt_set_ibe_id(ks_ibe_id3, strlen(ks_ibe_id3),3);
-  mqttclient.secmqtt_set_ibe_id(ks_ibe_id4, strlen(ks_ibe_id4),4);
-  mqttclient.secmqtt_set_ibe_id(ks_ibe_id5, strlen(ks_ibe_id5),5);
+  //mqttclient.secmqtt_set_ibe_id(ks_ibe_id4, strlen(ks_ibe_id4),4);
+ // mqttclient.secmqtt_set_ibe_id(ks_ibe_id5, strlen(ks_ibe_id5),5);
   mqttclient.secmqtt_set_enc_mode("ibe");
   mqttclient.secmqtt_set_secret_share_mode("sss");
 
@@ -235,9 +235,9 @@ void loop() {
   if (!mqttclient.connected()) {
     reconnect();
   }
-
+  
   unsigned long now = millis();
-  if (now - lastMsg > 10000) {
+  if (now - lastMsg > 2000) {
     lastMsg = now;
 
     if(mqttclient.get_state() == SECMQTT_KS_CONNECTED) {
