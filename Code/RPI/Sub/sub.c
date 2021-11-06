@@ -30,12 +30,7 @@ bool FLAG_ACK_TOPIC = false;
 #define TIMEOUT     10000L
 
 
-int id ;
-
-
-
-
-const char* mqttServer =  "192.168.0.110";
+const char* mqttServer =  "192.168.0.102";
 const int mqttPort = 1883;
 const char* base_topic = "MK/";
 const char* mqttConnTopic = "iot_data";
@@ -56,7 +51,7 @@ int main(int argc, char* argv[]) {
      *Start Mosquitto Client
      */
     #ifdef DBG
-    printf("Starting Subscriber %d...", id);
+    printf("Starting Subscriber %s...", subname);
     #endif
 
     struct mosquitto* mosq;
@@ -145,6 +140,8 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
 
     if (!strcmp(msg->topic, mqttConnTopic))
     {
+        struct timespec start , end;
+        clock_gettime(CLOCK_MONOTONIC,&start);
         int rc = 0;
         //BIO_dump_fp(stdout, msg->payload, msg->payloadlen);
         unsigned char  RTAG [16];
@@ -159,18 +156,32 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         memcpy(RCT, msg->payload+32+ sizeof(int),msglen);
 
         const char *aad = "";
-        #ifdef DDBG
-         BIO_dump_fp(stdout, RCT, msglen);
-        #endif
+
 
         if(session_key != NULL)
         {
-            int res =   aes_gcm_decrypt(RCT, 16,(unsigned char *)aad, strlen(aad),RTAG, session_key, RIV, 16, plain);
+            #ifdef DDBG
+                printf("Recived TAG:\n");
+                BIO_dump_fp(stdout, RTAG, 16);
+                printf("Recived IV:\n");
+                BIO_dump_fp(stdout, RIV, 16);
+                printf("Recived cipher text length: %d \n", msglen);
+                printf("Recived  Ciphertext: \n");
+                BIO_dump_fp(stdout, RCT, msglen);
+                printf("The session Key: \n");
+                BIO_dump_fp(stdout, session_key, 16);
+            #endif
+
+            int res =   aes_gcm_decrypt(RCT, msglen,(unsigned char *)aad, strlen(aad),RTAG, session_key, RIV, 16, plain);
             #ifdef DBG
              printf("aes_gcm_decrypt: res = %d \n", res);
             #endif
             if (res >0)
             {
+                clock_gettime(CLOCK_MONOTONIC,&end);
+                double t_DtM = (double)(end.tv_sec-start.tv_sec) *1000000000 + (double)(end.tv_nsec-start.tv_nsec);
+                printf ("Time to decrypt the message = %f  (ms) \n", t_DtM / 1000000);
+
                 printf("Plain text:\n");
                 BIO_dump_fp(stdout, plain, res);
             }
@@ -187,11 +198,16 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
         char *  buf = (char *) malloc(len);
         memcpy(buf, msg->payload, len);
         SaveCred(buf, len);
+        struct timespec start , end;
+        clock_gettime(CLOCK_MONOTONIC,&start);
         session_key = ComShare();
+        clock_gettime(CLOCK_MONOTONIC,&end);
         #ifdef DDBG
             BIO_dump_fp(stdout, session_key, BLOCK_SIZE);
             //PrintHEX (session_key, BLOCK_SIZE) ;
         #endif
+         double t_rtvk = (double)(end.tv_sec-start.tv_sec) *1000000000 + (double)(end.tv_nsec-start.tv_nsec);
+       printf ("Time to send R, evaluate CR and combibe shares = %f  (ms) \n", t_rtvk /1000000);
     }
 }
 
@@ -334,9 +350,12 @@ unsigned char * ComShare()
     #ifdef DBG
      printf("Getting the shares and combine them...\n");
     #endif
+    struct timespec start , end;
+    clock_gettime(CLOCK_MONOTONIC,&start);
     int ksid = 0;
     char * strshares = (char * )malloc(1024);
     memset(strshares, '\0', 1024);
+
     int rs = 0 ;
     while(rs<SSS_T && ksid <KSN_NUM)
     {
@@ -357,10 +376,18 @@ unsigned char * ComShare()
     }
     if (rs <SSS_T)
         return NULL;
-
+    clock_gettime(CLOCK_MONOTONIC,&end);
+    double t_grtshare = (double)(end.tv_sec-start.tv_sec) *1000000000 + (double)(end.tv_nsec-start.tv_nsec);
+    printf ("Time to send R to %d KeysTores Including  CR evaluation CR=%f  (ms) \n", SSS_T, t_grtshare / 1000000);
+    struct timespec startcom , endcom;
+    clock_gettime(CLOCK_MONOTONIC,&startcom);
     char *  result = extract_secret_from_share_strings(strshares) ;
+    clock_gettime(CLOCK_MONOTONIC,&endcom);
+
     #ifdef DBG
         printf("Key was combined seuucefully!\n");
+        double t_cmbhare = (double)(endcom.tv_sec-startcom.tv_sec) *1000000000 + (double)(endcom.tv_nsec-startcom.tv_nsec);
+        printf ("Time to combine  %d shares= %f  (ms) \n", SSS_T, t_cmbhare /1000000);
         #ifdef DDBG
             BIO_dump_fp(stdout, result, BLOCK_SIZE);
             //PrintHEX (result, BLOCK_SIZE);
