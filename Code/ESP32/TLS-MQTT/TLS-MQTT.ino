@@ -218,7 +218,7 @@ void loop()
 
 
   unsigned long now = millis();
-  if (now - lastMsg > 30000) {
+  if (now - lastMsg > 10000) {
     lastMsg = now;
     ++value;
 

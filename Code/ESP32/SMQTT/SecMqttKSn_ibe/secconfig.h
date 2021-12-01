@@ -11,17 +11,17 @@
 #define _SECCONFIG_H
 
 /* DEBUG FLAGS  */
-#define DBG_MSG
-#define TIME_MSG
-//#define DDBG
+#define DBG_MSG  /* enable high-level debug message */
+#define TIME_MSG /* enable debug messages about consumed time */
+//#define DDBG /*more detailed debug messages that includes crypto-related operations*/
 
 /* KeyStore */
-#define KSN_NUM 1
-#define MAX_SK_USAGE 5 // a session key can only be used in MAX_SK_USAGE times communication, then needs to be updated
+#define KSN_NUM 2
+#define MAX_SK_USAGE 2 // a session key can only be used in MAX_SK_USAGE times communication, then needs to be updated
 
 /* Shamir Secret Sharing Params */
 #define PRIME 257
-#define SSS_T 1 // SSS threshold (<= KSN_NUM)
+#define SSS_T 2 // SSS threshold (<= KSN_NUM)
 #define SSS_SIZE 39 // 6 + 2*BLOCK_SIZE + 1
 
 /* Crypto Params */

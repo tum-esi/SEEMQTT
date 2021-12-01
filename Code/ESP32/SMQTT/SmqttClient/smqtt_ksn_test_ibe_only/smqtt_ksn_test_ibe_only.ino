@@ -226,15 +226,15 @@ void setup() {
 
   dbgPrint(session_key, 0 , BLOCK_SIZE);
 
+int n =8;
 
- // for (int n =5; n<16; n+=5)
+//for (int n =2; n<16; n++)
+ //{
+ int t=8 ; 
+
+ //for (int t = 2 ; t<=n; t++)
   //{
-
-
- // for (int n = 2 ; n<=15 ; n++)
-  //{
-  int n = 15; 
-  int  t = 7; 
+ // int  t = floor(n / 2) +1 ; 
 for (int id = 0 ; id <100; id++)
 {
    unsigned long start_s = micros();
@@ -266,8 +266,8 @@ for (int id = 0 ; id <100; id++)
        free (extracted);
        free (colectedshare);
   }
- // }
- // }
+ // } /* for t loop*/
+// } /* for n loop */
 }
 
 void loop() {

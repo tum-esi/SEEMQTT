@@ -55,7 +55,8 @@ void SecMqtt::SecConnect(const char *client_id) {
     time_info.t_p1s = micros();
     if (this->_secmqtt_state == SECMQTT_KS_CONNECTED) {
 
-    } else {
+    }
+    else {
 
         /**
          *  1. generate a random topic under base topic (MK)
@@ -74,19 +75,17 @@ void SecMqtt::SecConnect(const char *client_id) {
         Serial.println("*************************************************");
         Serial.println("*  Phase I: Symmetric Master Key Distribution   *");
         Serial.println("*************************************************");
-        Serial.println("Phase I-1: Publishing Epk(K1) and nonce");
+        Serial.println("Phase I-1: Publishing Encrypted symK and nonce");
         Serial.println("*************************************************");
         #endif
 
         /* setup key store list */
-        #ifdef DBG_MSG
+        #ifdef DDBG
         Serial.println("++++++ setting up key stores' list ++++++");
         #endif
 
         time_info.t_p11s = micros();
         for (int i = 0; i < KSN_NUM; i++) {
-
-
 
             /* generate the symertic master key*/
             sym_key_generator(ksn_list[i].masterkey);
@@ -180,8 +179,8 @@ void SecMqtt::SecConnect(const char *client_id) {
                 write((byte *)msg, msg_len);
                 endPublish();
                 ibe_pub[i] = micros() - ibe_pub_s;
-                #ifdef DBG_MSG
-                Serial.printf("Key Published to  ks_%d\n",i);
+                #ifdef DDBG
+                Serial.printf("Key Published to  ks-%d\n",i+1);
                 #endif
                 time_info.t_recvs[i] = micros();
             }
@@ -232,34 +231,42 @@ void SecMqtt::SecConnect(const char *client_id) {
         time_info.t_p12 = micros() - t_p12_s;
         time_info.t_p1= micros() -  time_info.t_p1s ;
 
-
+        #ifdef TIME_MSG
+        Serial.printf("---------------------------------------------------------------------\n");
+        Serial.printf("Time to Connect:                                          \t%lu (us)\n", time_info.t_connect);
+        Serial.printf("Time to encrypt symmetric master key using IBE (Median):   \t%lu (us)\n", time_info.t_ibe_enc);
+        Serial.printf("Time to publish the encrypted symmetric master key(Median):\t%lu (us)\n", time_info.t_p11_publish);
+        Serial.printf("Time to finish Phase I-1:                                 \t%lu (us)\n", time_info.t_p11);
+        Serial.printf("---------------------------------------------------------------------\n");
+        Serial.printf("Time to decrypt the acknowledgement (Median):            \t%lu (us)\n", time_info.t_p12_dec);
+        //Serial.printf("Max time to Recive acknowledgment form KS:                \t%lu (us)\n", Max(time_info.t_recv, KSN_NUM) );
+        Serial.printf("Time to finish Phase I-2:                                  \t%lu (us)\n", time_info.t_p12);
+        Serial.printf("---------------------------------------------------------------------\n");
+        Serial.printf("Time to finish Phase I:                                    \t%lu (us)\n", time_info.t_p1);
+        Serial.printf("---------------------------------------------------------------------\n");
+        Serial.printf("ID\tphase1_s\tEncrypt\tPublish\tend_p11\t Rcv_ack\t endp12\n");
+        for (int index = 0; index < KSN_NUM; index++)
+          Serial.printf("%d\t%lu\t%lu\t%lu\t%lu\t%lu\t%lu\n",index, time_info.t_p11_start[index],ibe_enc[index], ibe_pub[index],time_info.t_recvs[index], time_info.t_recv[index], time_info.t_p12_end[index]);
+        #endif
     }
 
-    #ifdef TIME_MSG
-    Serial.printf("---------------------------------------------------------------------\n");
-    Serial.printf("Time to Connect:                                          \t%lu (us)\n", time_info.t_connect);
-    Serial.printf("Time to encrypt symmetric master key using IBE (Median):   \t%lu (us)\n", time_info.t_ibe_enc);
-    Serial.printf("Time to publish the encrypted symmetric master key(Median):\t%lu (us)\n", time_info.t_p11_publish);
-    Serial.printf("Time to finish Phase I-1:                                 \t%lu (us)\n", time_info.t_p11);
-    Serial.printf("---------------------------------------------------------------------\n");
-    Serial.printf("Time to decrypt the acknowledgement (Median):            \t%lu (us)\n", time_info.t_p12_dec);
-    //Serial.printf("Max time to Recive acknowledgment form KS:                \t%lu (us)\n", Max(time_info.t_recv, KSN_NUM) );
-    Serial.printf("Time to finish Phase I-2:                                  \t%lu (us)\n", time_info.t_p12);
-    Serial.printf("---------------------------------------------------------------------\n");
-    Serial.printf("Time to finish Phase I:                                    \t%lu (us)\n", time_info.t_p1);
-    Serial.printf("---------------------------------------------------------------------\n");
-    Serial.printf("ID\tphase1_s\tEncrypt\tPublish\tend_p11\t Rcv_ack\t endp12\n");
-    for (int index = 0; index < KSN_NUM; index++)
-      Serial.printf("%d\t%lu\t%lu\t%lu\t%lu\t%lu\t%lu\n",index, time_info.t_p11_start[index],ibe_enc[index], ibe_pub[index],time_info.t_recvs[index], time_info.t_recv[index], time_info.t_p12_end[index]);
-    #endif
+
 
     SecSessionKeyUpdate();
 
     return ;
 }
 
-// TODO
-// aes gcm mode
+
+void SecMqtt::SecDisconnect()
+{
+
+  this->_secmqtt_state = SECMQTT_KS_DISCONNECTED;
+  disconnect();
+  //#ifdef DBG
+    Serial.printf("KeyStore disconnect ..............................................\n");
+  //#endif
+}
 
 void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg_len) {
 
@@ -268,7 +275,7 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
      */
     #ifdef DBG_MSG
     Serial.println("**************************************************");
-    Serial.println("*   Phase III: Encrypted Message Transmission      *");
+    Serial.println("*   Phase III: Encrypted Message Transmission    *");
     Serial.println("**************************************************");
     #endif
 
@@ -285,7 +292,7 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     unsigned long t_b = micros();
 
     #ifdef DBG_MSG
-    Serial.println("Phase III: Publishing encrypted message ...");
+    Serial.println("Phase III: Publishing encrypted message...");
     #endif
 
     unsigned char Eskmsg [msg_len] ={0x0};
@@ -303,8 +310,11 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     time_info.t_p3_enc = micros() - t_p3_enc;
 
     #ifdef DDBG
-    Serial.print("plantext user message: ");
+
+    Serial.print("Plaintext user message: ");
     PrintHEX((unsigned char*)msg, msg_len);
+    Serial.print("Key: ");
+    PrintHEX((unsigned char*)this->_session_key, BLOCK_SIZE);
     Serial.print("Encrypted user message: ");
     PrintHEX(Eskmsg, msg_len);
     Serial.print("Tag: ");
@@ -327,15 +337,15 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     memcpy(mbuffer+2*BLOCK_SIZE +sizeof(int), Eskmsg, msg_len);
 
     #ifdef DDBG
-    Serial.print("plantext user message: ");
+    Serial.print("[Tag,IV, mlen, ciphertext]: ");
     PrintHEX(mbuffer, mlen);
     #endif
     unsigned long t_p3_enc_s =micros();
     beginPublish(topic,  mlen, false);
     write((byte*)mbuffer, mlen);
     endPublish();
-   time_info.t_p3_pub = micros() - t_p3_enc_s;
-   this->_sk_counter += 1;
+    time_info.t_p3_pub = micros() - t_p3_enc_s;
+    this->_sk_counter += 1;
 
 
     #ifdef DBG_MSG
@@ -1011,7 +1021,7 @@ void SecMqtt::secmqtt_set_enc_mode(char *mode) {
             element_pairing(ksn_list[i].Gid, ksn_list[i].Qid, ibe_param_pub.Kpub);
             time_info.t_ibe_oto = micros() -qid_s;
             #ifdef TIME_MSG
-              Serial.printf("Time to calculat Qid of ks[%d]:     \t%lu (us)\n", i+1,time_info.t_ibe_oto );
+              Serial.printf("Time to calculate Qid of ks[%d]:     \t%lu (us)\n", i+1,time_info.t_ibe_oto );
             #endif
         }
     }

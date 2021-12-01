@@ -154,6 +154,7 @@ class SecMqtt: public PubSubClient {
     void rsa_sign(const unsigned char * input, size_t P_SIZE, unsigned char * sign);
     void sym_key_generator(unsigned char* sym_key);
     void SecConnect(const char *client_id);
+    void SecDisconnect();
     void SecPublish(const char* topic, const unsigned char* msg, size_t msg_len);
     void SecCallback(char* topic, uint8_t* payload, unsigned int payload_length);
     void SecSessionKeyUpdate();

@@ -343,7 +343,7 @@ int aes_gcm_decrypt(unsigned char *ciphertext, int ciphertext_len,
     }
 }
 /*
- * ComShare: get the share from the KS and Combine them
+ * ComShare: get the shares from the KS and Combine them
  */
 unsigned char * ComShare()
 {
@@ -423,8 +423,6 @@ void PrintChar( const char * buf, int len)
  */
 char * GetShare(char * srv_hostname, int port, int * len)
 {
-    char * topic= "car_loc";
-	char * lication = "munich";
 	int sock;
 	struct sockaddr_in server;
 	struct hostent *hp;

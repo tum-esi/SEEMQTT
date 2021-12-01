@@ -85,9 +85,9 @@ void Evaluate(int msgsock)
      creatfile("cred1", cr1,cr1_len);
 
       int cr2_len ;
-     memcpy (&cr2_len, puf + sizeof(int)+ cr1_len, sizeof(int));
+      memcpy (&cr2_len, puf + sizeof(int)+ cr1_len, sizeof(int));
       char * cr2 = (char *) malloc (cr2_len);
-       memcpy (cr2, puf + sizeof(int)+ cr1_len + sizeof(int), cr2_len);
+      memcpy (cr2, puf + sizeof(int)+ cr1_len + sizeof(int), cr2_len);
 
 
       creatfile("cred2", cr2,cr2_len);
@@ -97,23 +97,16 @@ void Evaluate(int msgsock)
       memcpy (&pk_l, puf + 2* sizeof(int)+ cr_l, sizeof(int));
 
 
-
       char * PK_authorizer = (char *) malloc (pk_l);
       memcpy (PK_authorizer,  puf + 2* sizeof(int)+ cr_l + sizeof(int), pk_l);
 
-       creatfile("sub", PK_authorizer,pk_l);
-
+     creatfile("sub", PK_authorizer,pk_l);
       int asrt_l ;
       memcpy (&asrt_l,  puf + 2* sizeof(int)+ cr_l + sizeof(int)+ pk_l, sizeof(int));
-
-
-
-
       char * asrt = (char *) malloc(asrt_l);
       memcpy (asrt,  puf + 2* sizeof(int)+ cr_l + sizeof(int)+ pk_l +sizeof(int), asrt_l);
 
       creatfile("assrt", asrt,asrt_l);
-
 
 
   	/*
