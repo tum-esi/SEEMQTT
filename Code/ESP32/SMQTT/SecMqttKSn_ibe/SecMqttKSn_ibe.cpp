@@ -263,9 +263,9 @@ void SecMqtt::SecDisconnect()
 
   this->_secmqtt_state = SECMQTT_KS_DISCONNECTED;
   disconnect();
-  //#ifdef DBG
+  #ifdef DBG
     Serial.printf("KeyStore disconnect ..............................................\n");
-  //#endif
+  #endif
 }
 
 void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg_len) {
@@ -289,12 +289,12 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
         SecSessionKeyUpdate();
     }
 
-    unsigned long t_b = micros();
+
 
     #ifdef DBG_MSG
     Serial.println("Phase III: Publishing encrypted message...");
     #endif
-
+    unsigned long t_b = micros();
     unsigned char Eskmsg [msg_len] ={0x0};
     unsigned char iv[BLOCK_SIZE], iv_tmp[BLOCK_SIZE];
     esp_fill_random(iv, BLOCK_SIZE);
@@ -305,12 +305,11 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     unsigned char tag[BLOCK_SIZE];
     size_t tag_len = BLOCK_SIZE;
 
-    unsigned long t_p3_enc =micros();
+    //unsigned long t_p3_enc =micros();
     int result = aes_gcm_encryption(msg, msg_len, this->_session_key, iv_tmp, Eskmsg, (const unsigned char*)auth_msg, (size_t)strlen(auth_msg), tag, tag_len);
-    time_info.t_p3_enc = micros() - t_p3_enc;
-
+    time_info.t_p3_enc = micros() - t_b;
+    unsigned long t_p3_enc_s =micros();
     #ifdef DDBG
-
     Serial.print("Plaintext user message: ");
     PrintHEX((unsigned char*)msg, msg_len);
     Serial.print("Key: ");
@@ -340,7 +339,7 @@ void SecMqtt::SecPublish(const char* topic, const unsigned char* msg, size_t msg
     Serial.print("[Tag,IV, mlen, ciphertext]: ");
     PrintHEX(mbuffer, mlen);
     #endif
-    unsigned long t_p3_enc_s =micros();
+
     beginPublish(topic,  mlen, false);
     write((byte*)mbuffer, mlen);
     endPublish();
@@ -401,15 +400,14 @@ void SecMqtt::SecSessionKeyUpdate() {
     }
 
     /* Hashing the topic name  H(t_i) */
-    /*TODO Check DATA*/
-    rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (const unsigned char *)DATA, strlen(DATA), this->_iot_data_hash);
+    rc = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (const unsigned char *)this->_data_topic, strlen(this->_data_topic), this->_iot_data_hash);
     if (rc != 0) {
         #ifdef DBG_MSG
-        Serial.println("failed to hash DATA!");
+        Serial.printf("failed to hash the topic (%s)!\n", this->_data_topic);
         #endif
     } else {
         #ifdef DBG_MSG
-        Serial.println("successfully hash DATA!");
+        Serial.printf("successfully hash the topic (%s)!\n", this->_data_topic);
         #endif
     }
 
@@ -1026,6 +1024,14 @@ void SecMqtt::secmqtt_set_enc_mode(char *mode) {
         }
     }
 }
+
+  void SecMqtt::SetDataTopic(const char* topic)
+  {
+    if (strlen(topic) > TOPIC_SIZE)
+      return;
+    else
+      memcpy( this->_data_topic, topic, strlen(topic));
+  }
 
 void SecMqtt::secmqtt_set_ibe_id(const char*id, int idlen, int ksid) {
     ksn_list[ksid-1].ibe_id_len=idlen;

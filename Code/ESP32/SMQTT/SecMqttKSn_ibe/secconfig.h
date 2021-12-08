@@ -16,8 +16,8 @@
 //#define DDBG /*more detailed debug messages that includes crypto-related operations*/
 
 /* KeyStore */
-#define KSN_NUM 2
-#define MAX_SK_USAGE 2 // a session key can only be used in MAX_SK_USAGE times communication, then needs to be updated
+#define KSN_NUM 3
+#define MAX_SK_USAGE 50 // a session key can only be used in MAX_SK_USAGE times communication, then needs to be updated
 
 /* Shamir Secret Sharing Params */
 #define PRIME 257

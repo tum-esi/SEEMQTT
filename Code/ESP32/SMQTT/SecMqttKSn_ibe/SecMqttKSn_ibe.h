@@ -34,7 +34,7 @@
 using namespace std;
 
 
-#define DATA    "data"
+//#define DATA    "data"
 #define CR      "CR"
 
 // SMQTT_TIMEOUT: smqtt timeout in milliseconds. Override with setSmqttTimeout()
@@ -115,7 +115,7 @@ class SecMqtt: public PubSubClient {
     const unsigned char* _iot_pk_key;
     const unsigned char* _iot_pr_key;
     unsigned char * _iot_credntial;
-
+    char _data_topic[TOPIC_SIZE];
     int _iot_pk_key_size;
     int _iot_pr_key_size;
     int _iot_credntial_size;
@@ -154,6 +154,7 @@ class SecMqtt: public PubSubClient {
     void rsa_sign(const unsigned char * input, size_t P_SIZE, unsigned char * sign);
     void sym_key_generator(unsigned char* sym_key);
     void SecConnect(const char *client_id);
+    void SetDataTopic(const char* topic);
     void SecDisconnect();
     void SecPublish(const char* topic, const unsigned char* msg, size_t msg_len);
     void SecCallback(char* topic, uint8_t* payload, unsigned int payload_length);
