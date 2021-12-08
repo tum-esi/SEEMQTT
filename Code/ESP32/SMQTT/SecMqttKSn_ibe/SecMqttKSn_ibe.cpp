@@ -68,7 +68,7 @@ void SecMqtt::SecConnect(const char *client_id) {
          */
 
         /* the number of key stores out there */
-        unsigned char keync[KSN_NUM][2*BLOCK_SIZE];
+        unsigned char keync[KSN_NUM][2*BLOCK_SIZE+HASH_LEN];
         unsigned char keync_enc[KSN_NUM][512];
 
         #ifdef DBG_MSG
@@ -92,15 +92,18 @@ void SecMqtt::SecConnect(const char *client_id) {
             /*generate nonce */
             esp_fill_random(ksn_list[i].nonce, BLOCK_SIZE);
 
-            /* keyen = symK || nonce */
+            /* keyen = symK || nonce||H(pk) */
             memcpy(keync[i], ksn_list[i].masterkey, BLOCK_SIZE);
             memcpy(keync[i] + BLOCK_SIZE, ksn_list[i].nonce, BLOCK_SIZE);
+            memcpy(keync[i] +2* BLOCK_SIZE, this->_iot_pk_key_hash, HASH_LEN);
 
             #ifdef DDBG
             Serial.printf("KS[%d]. masterkey: ", i);
             PrintHEX (ksn_list[i].masterkey, BLOCK_SIZE);
             Serial.printf("KS[%d]. nonce: ", i);
             PrintHEX (ksn_list[i].nonce, BLOCK_SIZE);
+            Serial.printf("KS[%d]. hiotpk: ", i);
+            PrintHEX (this->_iot_pk_key_hash, HASH_LEN);
             #endif
         }
 
@@ -154,9 +157,9 @@ void SecMqtt::SecConnect(const char *client_id) {
             if (this->_ibe_mode) {
                 unsigned char Uc[ELEMENT_LEN];
 
-                //#TODO check 2*BLOCK_SIZE
+
                 unsigned long  starttime = micros();
-                int Uc_len = ibe_encryption(i, keync[i], 2*BLOCK_SIZE, keync_enc[i], Uc);
+                int Uc_len = ibe_encryption(i, keync[i], 2*BLOCK_SIZE+HASH_LEN, keync_enc[i], Uc);
                 ibe_enc[i] = micros() - starttime ;
 
                 #ifdef DDBG
@@ -167,12 +170,12 @@ void SecMqtt::SecConnect(const char *client_id) {
                 PrintHEX(Uc, Uc_len);
                 #endif
 
-                int msg_len = 2*BLOCK_SIZE + Uc_len + this->_iot_pk_key_size;
+                int msg_len = 2*BLOCK_SIZE+ HASH_LEN + Uc_len + this->_iot_pk_key_size;
                 unsigned char msg[msg_len];
 
-                memcpy(msg, keync_enc[i], 2*BLOCK_SIZE);
-                memcpy(msg + 2*BLOCK_SIZE, Uc, Uc_len);
-                memcpy(msg + 2*BLOCK_SIZE + Uc_len, this->_iot_pk_key, this->_iot_pk_key_size);
+                memcpy(msg, keync_enc[i], 2*BLOCK_SIZE+ HASH_LEN);
+                memcpy(msg + 2*BLOCK_SIZE+ HASH_LEN, Uc, Uc_len);
+                memcpy(msg + 2*BLOCK_SIZE+ HASH_LEN + Uc_len, this->_iot_pk_key, this->_iot_pk_key_size);
 
                 unsigned long ibe_pub_s = micros();
                 beginPublish(ksn_list[i].value_topic, msg_len, false);
@@ -180,7 +183,7 @@ void SecMqtt::SecConnect(const char *client_id) {
                 endPublish();
                 ibe_pub[i] = micros() - ibe_pub_s;
                 #ifdef DDBG
-                Serial.printf("Key Published to  ks-%d\n",i+1);
+                Serial.printf("Key Published to ks-%d\n",i+1);
                 #endif
                 time_info.t_recvs[i] = micros();
             }
@@ -1085,7 +1088,6 @@ int SecMqtt::ibe_encryption(int ks_id, unsigned char *plaintext, \
     free(gs);
     element_clear(r);
     element_clear(U);
-    //element_clear(gid);
     return Uc_len;
 }
 
