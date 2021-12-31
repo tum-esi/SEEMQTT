@@ -11,15 +11,15 @@ Installation of Arduino IDE and necessary plugins for ESP32 board.
 <details>
 <summary> click for details </summary>
 
-### 1.1 Arduino IDE
+1. Arduino IDE \
 We install Arduino IDE (version 1.8.13) on Linux machine. Follow the instructions to install Arduino IDE on your PC (Windows/Mac OS X/Linux/Portable IDE/ChromeOS):  
 https://www.arduino.cc/en/Guide/HomePage
 
-### 1.2 Install ESP32 Board Add-Ons in Arduino IDE
+2. Install ESP32 Board Add-Ons in Arduino IDE \
 We use ESP32 Boards in our project. Follow the instructions in this tutorial to add add-ons for ESP32 Boards in Arduino IDE:  
 https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
 
-### 1.3 Required libraries in Arduino IDE
+3. Required libraries in Arduino IDE \
 We need to install **PubSubClient** library, which is used in our project for MQTT client.
 Here is  a description about how to install a library into your Arduino IDE: https://www.arduino.cc/en/guide/libraries
 </details>
