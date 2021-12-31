@@ -219,6 +219,23 @@ keynote_get_sig_algorithm(char *sig, int *hash, int *enc, int *internal)
 	return KEYNOTE_ALGORITHM_RSA;
     }
 
+    /* added by MH */
+    if (!strncasecmp(SIG_RSA_SHA256_HEX, sig, SIG_RSA_SHA256_HEX_LEN))
+    {
+	*hash = KEYNOTE_HASH_SHA256;
+	*enc = ENCODING_HEX;
+	*internal = INTERNAL_ENC_PKCS1;
+	return KEYNOTE_ALGORITHM_RSA;
+    }
+/* added by MH */
+    if (!strncasecmp(SIG_RSA_SHA256_BASE64, sig, SIG_RSA_SHA256_BASE64_LEN))
+    {
+	*hash = KEYNOTE_HASH_SHA256;
+	*enc = ENCODING_BASE64;
+	*internal = INTERNAL_ENC_PKCS1;
+	return KEYNOTE_ALGORITHM_RSA;
+    }
+
     if (!strncasecmp(SIG_RSA_SHA1_PKCS1_HEX, sig, SIG_RSA_SHA1_PKCS1_HEX_LEN))
     {
 	*hash = KEYNOTE_HASH_SHA1;
@@ -783,6 +800,7 @@ keynote_sigverify_assertion(struct assertion *as)
     unsigned char res2[20];
     SHA_CTX shscontext;
     MD5_CTX md5context;
+    SHA256_CTX  sha256context; /* added by MH */
     int len = 0;
     DSA *dsa;
     RSA *rsa;
@@ -837,6 +855,19 @@ keynote_sigverify_assertion(struct assertion *as)
 	    MD5_Update(&md5context, as->as_signature,
 		       (char *) sig - as->as_signature);
 	    MD5_Final(res2, &md5context);
+#endif /* CRYPTO */
+	    break;
+/* added by MH */
+	case KEYNOTE_HASH_SHA256:
+#ifdef CRYPTO
+	    hashlen = 32;
+	    memset(res2, 0, hashlen);
+	    SHA256_Init(&sha256context);
+	    SHA256_Update(&sha256context, as->as_startofsignature,
+		       as->as_allbutsignature - as->as_startofsignature);
+	    SHA256_Update(&sha256context, as->as_signature,
+		       (char *) sig - as->as_signature);
+	    SHA256_Final(res2, &sha256context);
 #endif /* CRYPTO */
 	    break;
 
@@ -911,30 +942,30 @@ keynote_sigverify_assertion(struct assertion *as)
       if ((alg == KEYNOTE_ALGORITHM_RSA) && (intenc == INTERNAL_ENC_PKCS1))
       {
           rsa = (RSA *) as->as_authorizer;
-	  /*
-          if (RSA_verify_ASN1_OCTET_STRING(RSA_PKCS1_PADDING, res2, hashlen,
-					   decoded, len, rsa) == 1)
-          {
-              if (ptr != (unsigned char *) NULL)
-                free(ptr);
-              return SIGRESULT_TRUE;
+
+    /* added by MH */
+	int type ;
+	   switch(hashtype)
+	   {
+		case KEYNOTE_HASH_SHA1:
+		    type = NID_sha1;
+		    break;
+		case KEYNOTE_HASH_MD5:
+		    type = NID_md5;
+		    break;
+		case KEYNOTE_HASH_SHA256:
+		    type = NID_sha256;
+		    break;
+		case KEYNOTE_HASH_NONE:
+		    break;
+	  }
+
+    if (RSA_verify(type, res2, hashlen, decoded, len, rsa) == 1)
+        {
+          if (ptr != (unsigned char *) NULL)
+              free(ptr);
+          return SIGRESULT_TRUE;
           }
-	  */
-	  int type ;
-	  if  (hashtype == KEYNOTE_HASH_MD5)
-	    type = NID_md5;
-	  else if (hashtype == KEYNOTE_HASH_SHA1)
-	    type = NID_sha1;
-
-
-          if (RSA_verify(type, res2, hashlen,
-					   decoded, len, rsa) == 1)
-          {
-              if (ptr != (unsigned char *) NULL)
-                free(ptr);
-              return SIGRESULT_TRUE;
-          }
-
 
       }
       else
@@ -977,6 +1008,7 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
     RSA *rsa = (RSA *) NULL;
     SHA_CTX shscontext;
     MD5_CTX md5context;
+    SHA256_CTX sha256context;
 #endif /* CRYPTO */
 
     if ((as->as_signature_string_s == (char *) NULL) ||
@@ -1040,8 +1072,22 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
 		       as->as_allbutsignature - as->as_startofsignature);
 	    MD5_Update(&md5context, sigalg, (char *) sig - sigalg);
 	    MD5_Final(res2, &md5context);
+#endif /* CRYPTO */
+	    break;
+
+      /* added by MH */
+	case KEYNOTE_HASH_SHA256:
+#ifdef CRYPTO
 
 
+	    hashlen = 32;
+	    memset(res2, 0, hashlen);
+	    SHA256_Init(&sha256context);
+	    SHA256_Update(&sha256context, as->as_startofsignature,
+		       as->as_allbutsignature - as->as_startofsignature);
+	    SHA256_Update(&sha256context, sigalg, (char *) sig - sigalg);
+
+	    SHA256_Final(res2, &sha256context);
 #endif /* CRYPTO */
 	    break;
 
@@ -1073,7 +1119,8 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
     else
       if ((alg == KEYNOTE_ALGORITHM_RSA) &&
           ((hashtype == KEYNOTE_HASH_SHA1) ||
-           (hashtype == KEYNOTE_HASH_MD5)) &&
+           (hashtype == KEYNOTE_HASH_MD5) ||
+           (hashtype == KEYNOTE_HASH_SHA256) ) &&
           (internalenc == INTERNAL_ENC_PKCS1) &&
           ((encoding == ENCODING_HEX) || (encoding == ENCODING_BASE64)))
       {
@@ -1087,21 +1134,22 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
               keynote_errno = ERROR_MEMORY;
               return (char *) NULL;
           }
-
-/*
-          if (RSA_sign_ASN1_OCTET_STRING(RSA_PKCS1_PADDING, res2, hashlen,
-					 sbuf, &slen, rsa) <= 0)
-          {
-              free(sbuf);
-              keynote_errno = ERROR_SYNTAX;
-              return (char *) NULL;
-          }
-*/
+/* added by MH */ 
 	   int type ;
-	   if (hashtype == KEYNOTE_HASH_SHA1)
-		type = NID_sha1;
-	   else if (hashtype == KEYNOTE_HASH_MD5)
-		type = NID_md5;
+	   switch(hashtype)
+	   {
+		case KEYNOTE_HASH_SHA1:
+		    type = NID_sha1;
+		    break;
+		case KEYNOTE_HASH_MD5:
+		    type = NID_md5;
+		    break;
+		case KEYNOTE_HASH_SHA256:
+		    type = NID_sha256;
+		    break;
+		case KEYNOTE_HASH_NONE:
+		    break;
+	  }
           if (RSA_sign(type, res2, hashlen,
 					 sbuf, &slen, rsa) <= 0)
           {
@@ -1109,6 +1157,7 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
               keynote_errno = ERROR_SYNTAX;
               return (char *) NULL;
           }
+
     }
     else
       if ((alg == KEYNOTE_ALGORITHM_X509) &&
