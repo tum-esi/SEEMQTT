@@ -60,7 +60,8 @@ void  kn_GenCredential (const unsigned char * cre, int cr_len , const unsigned c
     return;
   }
   //*relen = KN_SIGN_SZ + cr_len ;
-  *relen =  cr_len + strlen(kn_sign) ;
+  char * sigpart = "Signature: ";
+  *relen =  cr_len + strlen(kn_sign) + strlen(sigpart) ;
   unsigned char * outconme = (unsigned char *) malloc(*relen) ;
   if (outconme == NULL)
   {
@@ -69,7 +70,7 @@ void  kn_GenCredential (const unsigned char * cre, int cr_len , const unsigned c
   }
   memset(outconme, '0', *relen);
   //printf("*******relen = %d***\n", *relen );
-  sprintf(outconme,"%s%s",cre,kn_sign );
+  sprintf(outconme,"%s%s%s",cre,sigpart, kn_sign );
   //printf("%s\n",outconme );
   *sig_cre = outconme ;
 }
@@ -182,14 +183,28 @@ char *  kn_rsa_sign_md5(const unsigned char * input, int len, const unsigned cha
     return NULL ;
   }
 
+  #ifdef DDBG
+  printf(" Length of the cre = %d \n", len);
+  printf("************************\n");
+  for (int i = 0 ; i< len ; i++)
+    printf("%c", input[i] );
+  printf("************************\n");
+   #endif
   /* compute the MD5 hash for the input*/
   mbedtls_md5_init(&shscontext);
   mbedtls_md5_starts(&shscontext);
-  mbedtls_md5_update(&shscontext,input, len);
+  mbedtls_md5_update(&shscontext,input, len-1);
   const unsigned char sigalg[]  = "sig-rsa-md5-hex:";
   int sigalglen = strlen((char *)sigalg);
   mbedtls_md5_update(&shscontext, sigalg, sigalglen);
   mbedtls_md5_finish(&shscontext, hashval);
+
+  #ifdef DDBG
+  printf(" MD5 lngth hash= %d \n", hashlen);
+  printf(" sigalglen= %d (must be 16)\n", sigalglen);
+  for (int i = 0 ; i< hashlen ; i++)
+    printf("%x", hashval[i] );
+   #endif
   int sign_ret;
   size_t olen= 0;
   sign_ret = mbedtls_pk_sign(&pr, MBEDTLS_MD_MD5, hashval, hashlen, sign, &olen, kn_myrand, NULL);
@@ -198,6 +213,12 @@ char *  kn_rsa_sign_md5(const unsigned char * input, int len, const unsigned cha
     mbedtls_pk_free(&pr);
     return NULL;
   }
+
+    #ifdef DDBG
+  printf(" figlen = %d\n", olen);
+  for (int i = 0 ; i< olen ; i++)
+    printf("%x", sign[i] );
+    #endif
   char * finalbuf = (char *)NULL;
   int  i = kn_encode_hex(sign, (char **) &finalbuf, olen);
 
