@@ -1,4 +1,4 @@
-# <img src="images/fixbug.svg" alt="fix bug" width="30"/> About The Project 
+# <img src="images/fixbug.svg" alt="about the project" width="30"/> About The Project 
 **SEEMQTT** is a project aiming at securing End-to-End MQTT-based Communication for Mobile IoT Systems Using Key Secret-Sharing and Trust Delegation.
 ---
 # <img src="images/checkboxes.svg" alt="requirements" width="30" /> Requirements
@@ -250,5 +250,5 @@ compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_
 ```
 </details>
 
-# License
-See LICENSE for more details 
+# <img src="images/license.svg" alt="license" width="30">License
+See LICENSE for more details.
