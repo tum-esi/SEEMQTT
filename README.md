@@ -7,7 +7,6 @@ In SEEMQTT project, we use ESP32 board as our MQTT publisher and use Arduino IDE
 Following **step 2-4** for cross-compilation or you can jump directly to **step 5** using our pre-compiled GMP and PBC libraries.
 
 ## 1. Installation
----
 Installation of Arduino IDE and necessary plugins for ESP32 board.
 <details>
 <summary> click for details </summary>
@@ -26,7 +25,6 @@ Here is  a description about how to install a library into your Arduino IDE: htt
 </details>
 
 ## 2. Cross-Compilation GMP library (version 6.2.0) for ESP32
----
 GMP is a free library for arbitrary precision arithmetic, operating on signed integers, rational numbers, and floating-point numbers.
 <details>
 <summary> click for details </summary>
@@ -70,7 +68,6 @@ chmod +x cross-compile-esp32.txt && ./cross-compile-esp32.txt
 </details>
 
 ## 3. Cross-Compilation PBC library (version 0.5.14) for ESP32
----
 The PBC (Pairing-Based Cryptography) library is a free C library (released under the GNU Lesser General Public License) built on the GMP library that performs the mathematical operations underlying pairing-based cryptosystems.
 <details>
 <summary> click for details </summary>
@@ -108,7 +105,6 @@ chmod +x cross-compile-esp32.txt && ./cross-compile-esp32.txt
 </details>
 
 ## 4. Import pre-compiled libraries of step 2 and 3 into Arduino
----
 In order to use our pre-compiled GMP and PBC libraries (**libgmp.a** and **libpbc.a**) in Arduino, we need to construct the folders in correct format for them under Arduino/libraries. \
 See also the specification from Arduino: https://arduino.github.io/arduino-cli/library-specification/
 <details>
@@ -224,7 +220,6 @@ int __nlocale_changed = 0;
 </details>
 
 ## 5. Using pre-compiled GMP and PBC libraries
----
 User can find a pre-compiled version of both libraries in the folder: **Code/ESP32/IBE/ibe_esp32/esp32_crosscompile** \
 To use these libraries, you must:
 <details>
@@ -256,5 +251,4 @@ compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_
 </details>
 
 # License
----
 See LICENSE for more details 
