@@ -5,11 +5,11 @@
  * in April-May 1998
  *
  * Copyright (C) 1998, 1999 by Angelos D. Keromytis.
- *	
+ *
  * Permission to use, copy, and modify this software without fee
  * is hereby granted, provided that this entire notice is included in
  * all copies of any software which is or includes a copy or
- * modification of this software. 
+ * modification of this software.
  *
  * THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTY. IN PARTICULAR, THE AUTHORS MAKES NO
@@ -47,17 +47,17 @@
 static const char hextab[] = {
      '0', '1', '2', '3', '4', '5', '6', '7',
      '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-}; 
+};
 
 /*
  * Actual conversion to hex.
- */   
+ */
 static void
 bin2hex(unsigned char *data, unsigned char *buffer, int len)
 {
     int off = 0;
-     
-    while(len > 0) 
+
+    while(len > 0)
     {
 	buffer[off++] = hextab[*data >> 4];
 	buffer[off++] = hextab[*data & 0xF];
@@ -298,7 +298,7 @@ keynote_get_sig_algorithm(char *sig, int *hash, int *enc, int *internal)
 
 /*
  * Map a key to an algorithm. Return algorithm number (defined in
- * keynote.h), or KEYNOTE_ALGORITHM_NONE if unknown. 
+ * keynote.h), or KEYNOTE_ALGORITHM_NONE if unknown.
  * This latter is also a valid algorithm (for logical tags). Also return
  * in the second and third arguments the ASCII and internal encodings.
  */
@@ -380,14 +380,14 @@ keynote_get_key_algorithm(char *key, int *encoding, int *internalencoding)
 	*encoding = ENCODING_HEX;
 	return KEYNOTE_ALGORITHM_BINARY;
     }
-    
+
     if (!strncasecmp(BINARY_BASE64, key, BINARY_BASE64_LEN))
     {
 	*internalencoding = INTERNAL_ENC_NONE;
 	*encoding = ENCODING_BASE64;
 	return KEYNOTE_ALGORITHM_BINARY;
     }
-    
+
     *internalencoding = INTERNAL_ENC_NONE;
     *encoding = ENCODING_NONE;
     return KEYNOTE_ALGORITHM_NONE;
@@ -401,7 +401,7 @@ static int
 keynote_get_private_key_algorithm(char *key, int *encoding,
 				  int *internalencoding)
 {
-    if (strncasecmp(KEYNOTE_PRIVATE_KEY_PREFIX, key, 
+    if (strncasecmp(KEYNOTE_PRIVATE_KEY_PREFIX, key,
 		    KEYNOTE_PRIVATE_KEY_PREFIX_LEN))
     {
 	*internalencoding = INTERNAL_ENC_NONE;
@@ -621,7 +621,7 @@ kn_decode_key(struct keynote_deckey *dc, char *key, int keytype)
 	if(ptr)
 	  free(ptr);
 	return 0;
-    }    
+    }
 #endif /* CRYPTO */
 
     /* BINARY keys */
@@ -674,7 +674,7 @@ kn_keycompare(void *key1, void *key2, int algorithm)
 	      return RESULT_TRUE;
 	    else
 	      return RESULT_FALSE;
-	    
+
 	case KEYNOTE_ALGORITHM_DSA:
 #ifdef CRYPTO
 	    p1 = (DSA *) key1;
@@ -685,7 +685,7 @@ kn_keycompare(void *key1, void *key2, int algorithm)
         DSA_get0_pqg(p2, &p2p, &p2q, &p2g);
         DSA_get0_key(p1, &p1pub_key, NULL);
         DSA_get0_key(p2, &p2pub_key, NULL);
-	    
+
         if (!BN_cmp(p1p, p2p) &&
 		!BN_cmp(p1q, p2q) &&
 		!BN_cmp(p1g, p2g) &&
@@ -711,7 +711,7 @@ kn_keycompare(void *key1, void *key2, int algorithm)
             BIGNUM *p3n, *p3e, *p4n, *p4e;
             RSA_get0_key(p3, &p3n, &p3e, NULL);
             RSA_get0_key(p4, &p4n, &p4e, NULL);
-            
+
             if (!BN_cmp(p3n, p4n) &&
                 !BN_cmp(p3e, p4e))
               return RESULT_TRUE;
@@ -733,7 +733,7 @@ kn_keycompare(void *key1, void *key2, int algorithm)
             //BIGNUM *p3n, *p3e, *p4n, *p4e;
             RSA_get0_key(p3, &p3n, &p3e, NULL);
             RSA_get0_key(p4, &p4n, &p4e, NULL);
-            
+
             if (!BN_cmp(p3n, p4n) &&
                 !BN_cmp(p3e, p4e))
               return RESULT_TRUE;
@@ -821,12 +821,12 @@ keynote_sigverify_assertion(struct assertion *as)
 	    SHA1_Init(&shscontext);
 	    SHA1_Update(&shscontext, as->as_startofsignature,
 			as->as_allbutsignature - as->as_startofsignature);
-	    SHA1_Update(&shscontext, as->as_signature, 
+	    SHA1_Update(&shscontext, as->as_signature,
 			(char *) sig - as->as_signature);
 	    SHA1_Final(res2, &shscontext);
 #endif /* CRYPTO */
 	    break;
-	    
+
 	case KEYNOTE_HASH_MD5:
 #ifdef CRYPTO
 	    hashlen = 16;
@@ -911,6 +911,7 @@ keynote_sigverify_assertion(struct assertion *as)
       if ((alg == KEYNOTE_ALGORITHM_RSA) && (intenc == INTERNAL_ENC_PKCS1))
       {
           rsa = (RSA *) as->as_authorizer;
+	  /*
           if (RSA_verify_ASN1_OCTET_STRING(RSA_PKCS1_PADDING, res2, hashlen,
 					   decoded, len, rsa) == 1)
           {
@@ -918,6 +919,23 @@ keynote_sigverify_assertion(struct assertion *as)
                 free(ptr);
               return SIGRESULT_TRUE;
           }
+	  */
+	  int type ;
+	  if  (hashtype == KEYNOTE_HASH_MD5)
+	    type = NID_md5;
+	  else if (hashtype == KEYNOTE_HASH_SHA1)
+	    type = NID_sha1;
+
+
+          if (RSA_verify(type, res2, hashlen,
+					   decoded, len, rsa) == 1)
+          {
+              if (ptr != (unsigned char *) NULL)
+                free(ptr);
+              return SIGRESULT_TRUE;
+          }
+
+
       }
       else
 	if ((alg == KEYNOTE_ALGORITHM_X509) && (intenc == INTERNAL_ENC_ASN1))
@@ -932,9 +950,9 @@ keynote_sigverify_assertion(struct assertion *as)
 		return SIGRESULT_TRUE;
 	    }
 	}
-    
+
     /* Handle more algorithms here */
-    
+
     if (ptr != (unsigned char *) NULL)
       free(ptr);
 #endif /* CRYPTO || PGPLIB */
@@ -1012,7 +1030,7 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
 	    SHA1_Final(res2, &shscontext);
 #endif /* CRYPTO */
 	    break;
-   
+
 	case KEYNOTE_HASH_MD5:
 #ifdef CRYPTO
 	    hashlen = 16;
@@ -1022,6 +1040,8 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
 		       as->as_allbutsignature - as->as_startofsignature);
 	    MD5_Update(&md5context, sigalg, (char *) sig - sigalg);
 	    MD5_Final(res2, &md5context);
+
+
 #endif /* CRYPTO */
 	    break;
 
@@ -1057,6 +1077,8 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
           (internalenc == INTERNAL_ENC_PKCS1) &&
           ((encoding == ENCODING_HEX) || (encoding == ENCODING_BASE64)))
       {
+
+
           rsa = (RSA *) key;
           sbuf = (unsigned char *) calloc(RSA_size(rsa),
                                           sizeof(unsigned char));
@@ -1066,6 +1088,7 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
               return (char *) NULL;
           }
 
+/*
           if (RSA_sign_ASN1_OCTET_STRING(RSA_PKCS1_PADDING, res2, hashlen,
 					 sbuf, &slen, rsa) <= 0)
           {
@@ -1073,7 +1096,20 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
               keynote_errno = ERROR_SYNTAX;
               return (char *) NULL;
           }
-      }
+*/
+	   int type ;
+	   if (hashtype == KEYNOTE_HASH_SHA1)
+		type = NID_sha1;
+	   else if (hashtype == KEYNOTE_HASH_MD5)
+		type = NID_md5;
+          if (RSA_sign(type, res2, hashlen,
+					 sbuf, &slen, rsa) <= 0)
+          {
+              free(sbuf);
+              keynote_errno = ERROR_SYNTAX;
+              return (char *) NULL;
+          }
+    }
     else
       if ((alg == KEYNOTE_ALGORITHM_X509) &&
 	  (hashtype == KEYNOTE_HASH_SHA1) &&
@@ -1084,7 +1120,7 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
 	      keynote_errno = ERROR_SYNTAX;
 	      return (char *) NULL;
 	  }
-	  
+
 	  if (BIO_write(biokey, key, strlen(key) + 1) <= 0)
 	  {
 	      BIO_free(biokey);
@@ -1153,7 +1189,7 @@ keynote_sign_assertion(struct assertion *as, char *sigalg, void *key,
 		return (char *) NULL;
 	    }
 
-	    if ((slen = kn_encode_base64(sbuf, slen, finalbuf, 
+	    if ((slen = kn_encode_base64(sbuf, slen, finalbuf,
 					 2 * slen)) == -1)
 	    {
 		free(sbuf);

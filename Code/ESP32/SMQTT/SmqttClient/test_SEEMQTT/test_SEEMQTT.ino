@@ -85,8 +85,7 @@ const unsigned char cr[] = \
 "            6fb40b86501846adfe4d21fc2ab45f7f50742e2f513519d0b\\\n" \
 "            095740e13261f92b3742ad056b71cb20d30203010001\"\n"\
 "Delegate: 1\n"\
-"Conditions: topic == \"car_loc\" && location == \"munich\" -> \"authorized\";\n"\
-"signature:";
+"Conditions: topic == \"car_loc\" && location == \"munich\" -> \"authorized\";\n";
 
 WiFiClient espClient;
 SecMqtt mqttclient(espClient);
@@ -242,10 +241,10 @@ void loop() {
 
     if(mqttclient.get_state() == SECMQTT_KS_CONNECTED) {
         Serial.printf("test %d, size %d \n", test_times, Size_Byte);
-        //char * txt = "Hello world hii";
-        //int mlen = 16 ;
-        mqttclient.SecPublish(topic, mymsg, Size_Byte);
-       // mqttclient.SecPublish(topic, (unsigned char *) txt, mlen);
+        char * txt = "Hello world hii";
+        int mlen = 16 ;
+      //  mqttclient.SecPublish(topic, mymsg, Size_Byte);
+       mqttclient.SecPublish(topic, (unsigned char *) txt, mlen);
         test_times += 1;
     }
     else {

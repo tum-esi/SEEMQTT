@@ -5,6 +5,7 @@
 
 #define DBG
 //#define DDBG
+#define T_DBG
 
 #define SELF_TEST
 #define TOPIC_SIZE 50

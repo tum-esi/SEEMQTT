@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
 void SaveCred(const char * buf, int len)
 {
     FILE * fptr;
-    fptr = fopen("CR-Pub-CA1", "w");
+    fptr = fopen(CR1, "w");
     if (fptr ==NULL)
     {
         #ifdef DBG
