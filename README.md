@@ -1,31 +1,40 @@
-# About The Project
-SEEMQTT is a project aiming at securing End-to-End MQTT-based Communication for Mobile IoT Systems Using Key Secret-Sharing and Trust Delegation.
+# <img src="images/fixbug.svg" alt="fix bug" width="30"/> About The Project 
+**SEEMQTT** is a project aiming at securing End-to-End MQTT-based Communication for Mobile IoT Systems Using Key Secret-Sharing and Trust Delegation.
 ---
-## Requirements
+# <img src="images/checkboxes.svg" alt="requirements" width="30" /> Requirements
+In SEEMQTT project, we use ESP32 board as our MQTT publisher and use Arduino IDE for programming ESP32 board. We implement the Boneh-Franklin Identity-Based Encryption (BF-IBE) based on GMP and PBC libraries and we cross compile both libraries for ESP32 board. We present here the cross-compilation exmaple of GMP and PBC libraries for ESP32 board. You can do the Cross-Compilation by following instructions below or simply use our precompiled libraries, which you can find them in **/Code/ESP32/IBE/ibe_esp32/esp32_crosscompile**.
+
+Following **step 2-4** for cross-compilation or you can jump directly to **step 5** using our pre-compiled GMP and PBC libraries.
+
+## 1. Installation
 ---
-In SEEMQTT project, we use ESP32 board as our MQTT publisher and use Arduino IDE for programming ESP32 board. We implement the Boneh-Franklin Identity-Based Encryption (BF-IBE) based on GMP and PBC libraries and we cross compile both libraries for ESP32 board. We present here the cross-compilation exmaple of GMP and PBC libraries for ESP32 board. You can do the Cross-Compilation by following instructions below or simply use our precompiled libraries.
-### 1. Installation
----
-#### 1.1 Arduino IDE
+Installation of Arduino IDE and necessary plugins for ESP32 board.
+<details>
+<summary> click for details </summary>
+
+### 1.1 Arduino IDE
 We install Arduino IDE (version 1.8.13) on Linux machine. Follow the instructions to install Arduino IDE on your PC (Windows/Mac OS X/Linux/Portable IDE/ChromeOS):  
 https://www.arduino.cc/en/Guide/HomePage
 
-#### 1.2 Install ESP32 Board Add-Ons in Arduino IDE
+### 1.2 Install ESP32 Board Add-Ons in Arduino IDE
 We use ESP32 Boards in our project. Follow the instructions in this tutorial to add add-ons for ESP32 Boards in Arduino IDE:  
 https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
 
-#### 1.3 Required libraries in Arduino IDE
+### 1.3 Required libraries in Arduino IDE
 We need to install **PubSubClient** library, which is used in our project for MQTT client.
 Here is  a description about how to install a library into your Arduino IDE: https://www.arduino.cc/en/guide/libraries
+</details>
 
-### 2. Cross-Compilation GMP library (version 6.2.0) for ESP32
+## 2. Cross-Compilation GMP library (version 6.2.0) for ESP32
 ---
 GMP is a free library for arbitrary precision arithmetic, operating on signed integers, rational numbers, and floating-point numbers.
+<details>
+<summary> click for details </summary>
+
 1. you need to download the GMP library source code from here: https://gmplib.org
 2. after unzip the library, create a text file  and save it as e.g. cross-compile-esp32.txt.
 3. copy the next code ( A wrapper around ./configure (https://github.com/ikalchev/kpabe-yct14-cpp/issues/2).) into the file and change the paths according to your own settings.
 4.  After running the text file we just generated, a **config.h** file will be generated.
-
 ```
 #!/bin/bash
 # Don't forget:
@@ -50,18 +59,22 @@ GMP is a free library for arbitrary precision arithmetic, operating on signed in
 ```
 chmod +x cross-compile-esp32.txt && ./cross-compile-esp32.txt
 ```
-3. Change HAVE_OBSTACK_VPRINTF, HAVE_NL_LANGINFO and HAVE_RAISE to 0 from **config.h**. **Note**: in our case, a error occurs during linking stage when we use pre-compiled libgmp.a library in Arduino (1.8.13). As a workaround we copy the lines below from invalid.c to errno.c.
+5. Change HAVE_OBSTACK_VPRINTF, HAVE_NL_LANGINFO and HAVE_RAISE to 0 from **config.h**. **Note**: in our case, a error occurs during linking stage when we use pre-compiled libgmp.a library in Arduino (1.8.13). As a workaround we copy the lines below from invalid.c to errno.c.
 ```
 #if ! HAVE_RAISE
 #define raise(sig)   kill (getpid(), sig)
 #endif
 ```
-4. Run ```make && make install``` to generate static library **libgmp.a**, which will be located in our case under folder **/usr/local/lib/xtensa-esp32-elf/lib**.
-5. Done
+6. Run ```make && make install``` to generate static library **libgmp.a**, which will be located in our case under folder **/usr/local/lib/xtensa-esp32-elf/lib**.
+7. Done
+</details>
 
-### 3. Cross-Compilation PBC library (version 0.5.14) for ESP32
+## 3. Cross-Compilation PBC library (version 0.5.14) for ESP32
 ---
 The PBC (Pairing-Based Cryptography) library is a free C library (released under the GNU Lesser General Public License) built on the GMP library that performs the mathematical operations underlying pairing-based cryptosystems.
+<details>
+<summary> click for details </summary>
+
 1. PBC library source code download: https://crypto.stanford.edu/pbc/download.html
 2. A wrapper around ./configure (https://github.com/ikalchev/kpabe-yct14-cpp/issues/2). Change the paths according to your own settings and save it as e.g. cross-compile-esp32.txt. After running the script, a **config.h** file will be generated.
 ```
@@ -69,9 +82,7 @@ The PBC (Pairing-Based Cryptography) library is a free C library (released under
 # The many includes in CPPFLAGS are all because of arith/init_random.c, as it is modified to use the random number generator from the esp platform.
 # Don't forget:
 # - Change HAVE_ALLOCA and HAVE_ALLOCA_H to 0 (we don't want to use stack allocation on the esp)
-
 TOOLCHAIN="/home/mao/Desktop/esp/xtensa-esp32-toolchain/xtensa-esp32-elf/bin/xtensa-esp32-elf-"
-
 ./configure \
   --enable-static \
   --disable-shared \
@@ -92,15 +103,18 @@ TOOLCHAIN="/home/mao/Desktop/esp/xtensa-esp32-toolchain/xtensa-esp32-elf/bin/xte
 chmod +x cross-compile-esp32.txt && ./cross-compile-esp32.txt
 ```
 3. Change HAVE_ALLOCA and HAVE_ALLOCA_H to 0 from **config.h**.
-
 4. Run ```make && make install``` to generate static library **libpbc.a**, which will be located in our case under folder **/usr/local/lib/xtensa-esp32-elf/lib**.
 5. Done
+</details>
 
-### 4. Import pre-compiled libraries of step 2 and 3 into Arduino
+## 4. Import pre-compiled libraries of step 2 and 3 into Arduino
 ---
 In order to use our pre-compiled GMP and PBC libraries (**libgmp.a** and **libpbc.a**) in Arduino, we need to construct the folders in correct format for them under Arduino/libraries. \
 See also the specification from Arduino: https://arduino.github.io/arduino-cli/library-specification/
-#### 4.1 Add pre-compiled GMP library in Arduino
+<details>
+<summary> click for details </summary>
+
+### 4.1 Add pre-compiled GMP library in Arduino
 1. Constructed GMP library folder
 ```
 Arduino/libraries/gmp
@@ -127,7 +141,7 @@ precompiled=true
 ldflags=-lgmpesp32
 ```
 
-#### 4.2 Add pre-compiled PBC library in Arduino
+### 4.2 Add pre-compiled PBC library in Arduino
 1. Constructed PBC library folder
 ```
 Arduino/libraries/pbc/
@@ -177,7 +191,7 @@ includes=pbc.h
 precompiled=true
 ldflags=-lpbcesp32
 ```
-#### 4.3 Change platform.txt in Arduino in order to use pre-compiled library
+### 4.3 Change platform.txt in Arduino in order to use pre-compiled library
 See also the discussion for more details: https://forum.arduino.cc/index.php?topic=653746.0 \
 **platform.txt**: file is located in **~/.arduino15/packages/esp32/hardware/esp32/1.0.4** (under normal user not root).
 1. Add this line anywhere in platform.txt
@@ -207,17 +221,21 @@ int _PathLocale = 0;
 int __mlocale_changed = 0;
 int __nlocale_changed = 0;
 ```
+</details>
 
-## Using pre-compiled GMP and PBC libraries
+## 5. Using pre-compiled GMP and PBC libraries
 ---
 User can find a pre-compiled version of both libraries in the folder: **Code/ESP32/IBE/ibe_esp32/esp32_crosscompile** \
 To use these libraries, you must:
-### 1. Add pre-compiled libraries into Arduino libraries folder
+<details>
+<summary> click for details </summary>
+
+### 5.1 Add pre-compiled libraries into Arduino libraries folder
 Locating the Arduino libraries folder:
 - in case of using Linux:  **Arduino/libraries/**
 - in case of using Windows 10: **C:\Users\usename\Documents\Arduino\libraries**
 
-### 2. Change platform.txt in Arduino in order to use the pre-compiled libraries
+### 5.2 Change platform.txt in Arduino in order to use the pre-compiled libraries
 Locating the platform.txt:
 - in case of using Linux: **~/.arduino15/packages/esp32/hardware/esp32/1.0.4**(under normal user not root)
 - in case of using Windows 10: **C:\Users\usename\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.4\**
@@ -235,6 +253,8 @@ recipe.c.combine.pattern="{compiler.path}{compiler.c.elf.cmd}" {compiler.c.elf.f
 ```
 compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_http_server -lbtdm_app -lspiffs -lbootloader_sup    port -lmdns -lnvs_flash -lfatfs -lpp -lnet80211 -ljsmn -lface_detection -llibsodium -lvfs -ldl_lib -llog -lfreertos -lcxx -lsmar    tconfig_ack -lxtensa-debug-module -lheap -ltcpip_adapter -lmqtt -lulp -lfd -lfb_gfx -lnghttp -lprotocomm -lsmartconfig -lm -leth    ernet -limage_util -lc_nano -lsoc -ltcp_transport -lc -lmicro-ecc -lface_recognition -ljson -lwpa_supplicant -lmesh -lesp_https_    ota -lwpa2 -lexpat -llwip -lwear_levelling -lapp_update -ldriver -lbt -lespnow -lcoap -lasio -lnewlib -lconsole -lapp_trace -les    p32-camera -lhal -lprotobuf-c -lsdmmc -lcore -lpthread -lcoexist -lfreemodbus -lspi_flash -lesp-tls -lwpa -lwifi_provisioning -l    wps -lesp_adc_cal -lesp_event -lopenssl -lesp_ringbuf -lfr  **-lgmpesp32** **-lpbcesp32** -lstdc++
 ```
-## License
+</details>
+
+# License
 ---
-See LICENSE for more details
+See LICENSE for more details 
