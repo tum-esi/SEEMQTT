@@ -11,6 +11,7 @@ void  kn_GenCredential (const unsigned char * cre, int len , const unsigned char
 int kn_encode_hex(unsigned char *buf, char **dest, int len);
 char *   kn_encode_signture( char *algname ,  char *key) ;
 char *  kn_rsa_sign_md5(const unsigned char * input, int len, const unsigned char * auth_pr, int keylen,   unsigned char * sign);
+char *  kn_rsa_sign_sha256(const unsigned char * input, int len, const unsigned char * auth_pr, int keylen,   unsigned char * sign);
 
 #ifdef __cplusplus
 }
