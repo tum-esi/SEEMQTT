@@ -1,4 +1,4 @@
-# <img src="images/fixbug.svg" alt="about the project" width="30"/>  About The Project 
+# <img src="images/project.svg" alt="about the project" width="30"/>  About The Project 
 **SEEMQTT** is a project aiming at securing End-to-End MQTT-based Communication for Mobile IoT Systems Using Key Secret-Sharing and Trust Delegation.
 ---
 # <img src="images/checkboxes.svg" alt="requirements" width="30" />  Requirements
