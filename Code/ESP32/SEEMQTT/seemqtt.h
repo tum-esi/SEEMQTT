@@ -12,8 +12,8 @@
   mbedtls library is used to do aes encryption and rsa signature
 */
 
-#ifndef _SECMQTTKSN_H
-#define _SECMQTTKSN_H
+#ifndef _SEEMQTT_H
+#define _SEEMQTT_H
 
 #include <iostream>
 #include <functional>
@@ -179,4 +179,4 @@ class SecMqtt: public PubSubClient {
     time_msg_t time_info;
 };
 
-#endif /* End of _SECMQTTKSN_H */
+#endif /* End of _SEEMQTT_H*/
