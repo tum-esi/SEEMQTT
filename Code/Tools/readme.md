@@ -1,4 +1,21 @@
-#Key Generator
-This is used to generate a public and private key copatable to the KeyNote credeantils (i.e., in Hex and base64) format. 
-It also create the .PEM file of that key. 
-You need to use this to generate publik and private keys for the Publisher, CAs, and Subscribers.  
+### Key Generator
+
+This tool is used to generate a public and private key compatible to the KeyNote credentials. 
+The tool will generate public and  private keys in both  .PEM  format and KeyNote format (i.e., Hex or Base64). 
+You need to use this tool to generate public and private keys for the Publisher, CAs, and Subscribers. 
+
+You must copy the keys of the Publisher to the  Arduino project and form the credential (without signature).   You must create the other credentials (i.e., CR^{CA}_Sub) and sign it using KeyNote. 
+
+
+
+#### Compile and run 
+
+- Compile the test file
+  `$ make`
+
+- generate the keys  
+
+  `$ ./KeyGen pkKname prKname keylenght `
+
+  keylenght can be either 1024, 2048 or 3072
+
