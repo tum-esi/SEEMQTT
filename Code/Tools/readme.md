@@ -11,6 +11,7 @@ You must copy the keys of the Publisher to the  Arduino project and form the cre
 #### Compile and run 
 
 - Compile the test file
+
   `$ make`
 
 - generate the keys  
