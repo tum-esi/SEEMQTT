@@ -218,5 +218,5 @@ compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_
 ```
 
 ##  Performence TEST 
-The ibe_esp32.io is a project to test and evaluate the performance evaluation of the four primary operations of IBE:  setup, extract, encryption and decryption.
+The ibe_esp32.ino is a project to test and evaluate the performance evaluation of the four primary operations of IBE:  setup, extract, encryption and decryption.
 We use multiple message sizes for evaluating the encryption and decryption (Setup and extract are independent of the message size). Also, the program measures the one-time overhead (OTO) during the encryption.  
