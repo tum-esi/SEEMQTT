@@ -341,6 +341,28 @@ $./PEM ID  port
 </details>
 
 ## 3. Subscriber
+- To compile and run the Subscriber component,  you need to install the  MQTT client and OpenSSL libraries (we have already discussed how to install these libraries in the KeyStore section). 
+- Some paprmerts (in config.h and subscriber.h) need to be adjusted before compiling and runiing the subscribers. 
+These papramerts are: 
+
+```
+KSN_NUM           //  The number of KeyStores. 
+SSS_T            //  Shamir's secret sharing threshold. this should be consistent with the parameter selected in the publisher
+KSids[KSN_NUM] = {ID1, ID2, ..}    //  The IDs of KeyStres. This should include the IDs that were used during running every KeyStores
+KSports[KSN_NUM]  //  The ports where every Policy Evaluation Module is listening
+KSnames[KSN_NUM]  // The IP address of the  KSN_NUM KeyStores
+The folder **Subscriber/cre** should include all the required credentials (except the one that will be received from the publisher), the subscriber's public key, and the asserts file
+```
+- Then, compile and run Subscriber as follows: 
+
+```
+$ cd Subscriber
+$ make
+$./Subscriber
+```
+</details>
+
+##
 ## 4. Broker
 # <img src="images/license.svg" alt="license" width="30">  License
 See LICENSE for more details.
