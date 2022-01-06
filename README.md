@@ -14,7 +14,7 @@ In SEEMQTT project, we use ESP32 board as an MQTT publisher and use Arduino IDE 
 
 Following **step 2-4** for cross-compilation or you can jump directly to **step 5** using our pre-compiled GMP and PBC libraries.
 
-### 1. Installation
+### 1.1. Installation
 Installation of Arduino IDE and necessary plugins for ESP32 board.
 <details>
 <summary> click for details </summary>
@@ -32,7 +32,7 @@ We need to install **PubSubClient** library, which is used in our project for MQ
 Here is  a description about how to install a library into your Arduino IDE: https://www.arduino.cc/en/guide/libraries
 </details>
 
-### 2. Cross-Compilation GMP library (version 6.2.0) for ESP32
+### 1.2. Cross-Compilation GMP library (version 6.2.0) for ESP32
 GMP is a free library for arbitrary precision arithmetic, operating on signed integers, rational numbers, and floating-point numbers.
 <details>
 <summary> click for details </summary>
@@ -75,7 +75,7 @@ chmod +x cross-compile-esp32.txt && ./cross-compile-esp32.txt
 7. Done
 </details>
 
-### 3. Cross-Compilation PBC library (version 0.5.14) for ESP32
+### 1.3. Cross-Compilation PBC library (version 0.5.14) for ESP32
 The PBC (Pairing-Based Cryptography) library is a free C library (released under the GNU Lesser General Public License) built on the GMP library that performs the mathematical operations underlying pairing-based cryptosystems.
 <details>
 <summary> click for details </summary>
@@ -112,13 +112,13 @@ chmod +x cross-compile-esp32.txt && ./cross-compile-esp32.txt
 5. Done
 </details>
 
-### 4. Import pre-compiled libraries of step 2 and 3 into Arduino
+### 1.4. Import pre-compiled libraries of step 2 and 3 into Arduino
 In order to use our pre-compiled GMP and PBC libraries (**libgmp.a** and **libpbc.a**) in Arduino, we need to construct the folders in correct format for them under Arduino/libraries. \
 See also the specification from Arduino: https://arduino.github.io/arduino-cli/library-specification/
 <details>
 <summary> click for details </summary>
 
-### 4.1 Add pre-compiled GMP library in Arduino
+#### 1.4.1 Add pre-compiled GMP library in Arduino
 1. Constructed GMP library folder
 ```
 Arduino/libraries/gmp
@@ -145,7 +145,7 @@ precompiled=true
 ldflags=-lgmpesp32
 ```
 
-### 4.2 Add pre-compiled PBC library in Arduino
+#### 1.4.2 Add pre-compiled PBC library in Arduino
 1. Constructed PBC library folder
 ```
 Arduino/libraries/pbc/
@@ -195,7 +195,7 @@ includes=pbc.h
 precompiled=true
 ldflags=-lpbcesp32
 ```
-### 4.3 Change platform.txt in Arduino in order to use pre-compiled library
+#### 1.4.3 Change platform.txt in Arduino in order to use pre-compiled library
 See also the discussion for more details: https://forum.arduino.cc/index.php?topic=653746.0 \
 **platform.txt**: file is located in **~/.arduino15/packages/esp32/hardware/esp32/1.0.4** (under normal user not root).
 1. Add this line anywhere in platform.txt
@@ -212,7 +212,7 @@ recipe.c.combine.pattern="{compiler.path}{compiler.c.elf.cmd}" {compiler.c.elf.f
 compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_http_server -lbtdm_app -lspiffs -lbootloader_sup    port -lmdns -lnvs_flash -lfatfs -lpp -lnet80211 -ljsmn -lface_detection -llibsodium -lvfs -ldl_lib -llog -lfreertos -lcxx -lsmar    tconfig_ack -lxtensa-debug-module -lheap -ltcpip_adapter -lmqtt -lulp -lfd -lfb_gfx -lnghttp -lprotocomm -lsmartconfig -lm -leth    ernet -limage_util -lc_nano -lsoc -ltcp_transport -lc -lmicro-ecc -lface_recognition -ljson -lwpa_supplicant -lmesh -lesp_https_    ota -lwpa2 -lexpat -llwip -lwear_levelling -lapp_update -ldriver -lbt -lespnow -lcoap -lasio -lnewlib -lconsole -lapp_trace -les    p32-camera -lhal -lprotobuf-c -lsdmmc -lcore -lpthread -lcoexist -lfreemodbus -lspi_flash -lesp-tls -lwpa -lwifi_provisioning -l    wps -lesp_adc_cal -lesp_event -lopenssl -lesp_ringbuf -lfr  **-lgmpesp32** **-lpbcesp32** -lstdc++
 ```
 
-### Note
+#### Note
 In our case, an error occurs during linking stage.
 ```
 in libc_nano.a undefined reference to "_PathLocale"
@@ -227,18 +227,18 @@ int __nlocale_changed = 0;
 ```
 </details>
 
-### 5. Using pre-compiled GMP and PBC libraries
+### 1.5. Using pre-compiled GMP and PBC libraries
 User can find a pre-compiled version of both libraries in the folder: **ESP32/esp32_crosscompile** \
 To use these libraries, you must:
 <details>
 <summary> click for details </summary>
 
-### 5.1 Add pre-compiled libraries into Arduino libraries folder
+### 1.5.1 Add pre-compiled libraries into Arduino libraries folder
 Locating the Arduino libraries folder:
 - in case of using Linux:  **Arduino/libraries/**
 - in case of using Windows 10: **C:\Users\usename\Documents\Arduino\libraries**
 
-### 5.2 Change platform.txt in Arduino in order to use the pre-compiled libraries
+### 1.5.2 Change platform.txt in Arduino in order to use the pre-compiled libraries
 Locating the platform.txt:
 - in case of using Linux: **~/.arduino15/packages/esp32/hardware/esp32/1.0.4**(under normal user not root)
 - in case of using Windows 10: **C:\Users\usename\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.4\**
