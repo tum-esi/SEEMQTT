@@ -324,19 +324,19 @@ $ make
 <details>
 <summary> click for details </summary>
 
-- Compile and run KeyStore: the ID of the KyeStore must be provided.
+- Compile and run KeyStore: the ID of the KyeStore must be provided. 
 
 ```
 $ cd KeyStore/KS
 $ make
-$./KeyStore ID ibe sss
+$./KeyStore ID1 ibe sss
 ```
 - Then, compile and run the Policy Evalaution Module (the ID here is the same one used while running the KeyStore)
 
 ```
 $ cd KeyStore/KsPEM
 $ make
-$./PEM ID  port
+$./PEM ID  port1
 ```
 </details>
 
@@ -348,9 +348,9 @@ These papramerts are:
 ```
 KSN_NUM           //  The number of KeyStores. 
 SSS_T            //  Shamir's secret sharing threshold. this should be consistent with the parameter selected in the publisher
-KSids[KSN_NUM] = {ID1, ID2, ..}    //  The IDs of KeyStres. This should include the IDs that were used during running every KeyStores
-KSports[KSN_NUM]  //  The ports where every Policy Evaluation Module is listening
-KSnames[KSN_NUM]  // The IP address of the  KSN_NUM KeyStores
+KSids[KSN_NUM] = {ID1, ID2, ...}    //  The IDs of KeyStres. This should include the IDs that were used during running every KeyStores
+KSports[KSN_NUM] = {port1, port2, ...} //  The ports where every Policy Evaluation Module is listening
+KSnames[KSN_NUM] = {IP1, IP2, ...} // The IP address of the  KSN_NUM KeyStores
 The folder **Subscriber/cre** should include all the required credentials (except the one that will be received from the publisher), the subscriber's public key, and the asserts file
 ```
 - Then, compile and run Subscriber as follows: 
