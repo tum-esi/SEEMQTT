@@ -14,13 +14,13 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 String clientId = "ESP32Clientclear-"; /* MQTT client ID (will add random hex suffix during setup) */
 
-//const char* WIFI_NETWORK = "mhhap";
-//const char* WIFI_PASSWORD = "mhh1986mhh>>";
+/* TODO: Do not forget to change this parameters*/
 
 const char* WIFI_NETWORK = "TP-Link_904A";
 const char* WIFI_PASSWORD = "30576988";
 const char* MQTT_SERVER = "192.168.0.110"; 
 const int MQTT_PORT = 1883;
+
 const uint32_t WIFI_TIMEOUT_MS = 20000;
 unsigned long lastMsg = 0;
 int value = 0;
