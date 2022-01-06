@@ -1,5 +1,5 @@
 #include "db.h"
-#include "typ.h"
+#include "type.h"
 
 
 

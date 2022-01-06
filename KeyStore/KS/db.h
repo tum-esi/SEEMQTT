@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include<sys/stat.h>
 #include <unistd.h>
-#include "typ.h"
+#include "type.h"
 
 #define MAXDBROW 10 
 #define SHARPATH "../../SHARDB"

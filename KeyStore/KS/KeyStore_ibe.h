@@ -19,7 +19,7 @@
 #include <mosquitto.h>
 #include <pbc/pbc.h>
 
-#include "typ.h"
+#include "type.h
 #include "db.h"
 
 /* definition of curve parameters */
