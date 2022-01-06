@@ -9,11 +9,12 @@ The system contains these main components:
 4. Security credentials. To set up such security credential, you may need to use the Key Generator tool (see folder **Tools**)  and the KeyNote trust managment system (see folder **KeyStore\KeyNote**).  
 5. Finally,  you need to install an MQTT broker. 
 # <img src="images/checkboxes.svg" alt="requirements" width="30" />  Requirements
+## 1. Publisher 
 In SEEMQTT project, we use ESP32 board as an MQTT publisher and use Arduino IDE for programming ESP32 board. We implement the Boneh-Franklin Identity-Based Encryption (BF-IBE) based on  GMP and PBC libraries. We cross-compile both libraries for the ESP32 board. We present here the cross-compilation exmaple of GMP and PBC libraries for ESP32 board. You can do the Cross-Compilation by following instructions below or simply use our precompiled libraries, which you can find them in **ESP32/esp32_crosscompile**.
 
 Following **step 2-4** for cross-compilation or you can jump directly to **step 5** using our pre-compiled GMP and PBC libraries.
 
-## 1. Installation
+### 1. Installation
 Installation of Arduino IDE and necessary plugins for ESP32 board.
 <details>
 <summary> click for details </summary>
@@ -31,7 +32,7 @@ We need to install **PubSubClient** library, which is used in our project for MQ
 Here is  a description about how to install a library into your Arduino IDE: https://www.arduino.cc/en/guide/libraries
 </details>
 
-## 2. Cross-Compilation GMP library (version 6.2.0) for ESP32
+### 2. Cross-Compilation GMP library (version 6.2.0) for ESP32
 GMP is a free library for arbitrary precision arithmetic, operating on signed integers, rational numbers, and floating-point numbers.
 <details>
 <summary> click for details </summary>
@@ -74,7 +75,7 @@ chmod +x cross-compile-esp32.txt && ./cross-compile-esp32.txt
 7. Done
 </details>
 
-## 3. Cross-Compilation PBC library (version 0.5.14) for ESP32
+### 3. Cross-Compilation PBC library (version 0.5.14) for ESP32
 The PBC (Pairing-Based Cryptography) library is a free C library (released under the GNU Lesser General Public License) built on the GMP library that performs the mathematical operations underlying pairing-based cryptosystems.
 <details>
 <summary> click for details </summary>
@@ -111,7 +112,7 @@ chmod +x cross-compile-esp32.txt && ./cross-compile-esp32.txt
 5. Done
 </details>
 
-## 4. Import pre-compiled libraries of step 2 and 3 into Arduino
+### 4. Import pre-compiled libraries of step 2 and 3 into Arduino
 In order to use our pre-compiled GMP and PBC libraries (**libgmp.a** and **libpbc.a**) in Arduino, we need to construct the folders in correct format for them under Arduino/libraries. \
 See also the specification from Arduino: https://arduino.github.io/arduino-cli/library-specification/
 <details>
@@ -226,7 +227,7 @@ int __nlocale_changed = 0;
 ```
 </details>
 
-## 5. Using pre-compiled GMP and PBC libraries
+### 5. Using pre-compiled GMP and PBC libraries
 User can find a pre-compiled version of both libraries in the folder: **ESP32/esp32_crosscompile** \
 To use these libraries, you must:
 <details>
@@ -257,5 +258,8 @@ compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_
 ```
 </details>
 
+## KeyStore
+## Subscriber 
+## Broker 
 # <img src="images/license.svg" alt="license" width="30">  License
 See LICENSE for more details.
