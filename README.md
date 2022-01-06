@@ -258,11 +258,11 @@ compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_
 ```
 </details>
 
-## KeyStore
+## 2. KeyStore
 To compile and run the Keystroe components,  you need to install IBE library and mosquitto library. 
 In our setup, the Keystores were running on Raspbery Pi 4. 
 
-### Install IBE 
+### 2.1 Install IBE 
 <details>
 <summary> click for details </summary>
 Installing IBE requires the existence of both GMP and PBC libraries.
@@ -300,7 +300,11 @@ Installing IBE requires the existence of both GMP and PBC libraries.
     $ sudo make install
     ```
 </details>
-  ## Subscriber 
-## Broker 
+### 2.1 Install IBE 
+<details>
+<summary> click for details </summary>
+</details>
+## 3. Subscriber 
+## 4. Broker 
 # <img src="images/license.svg" alt="license" width="30">  License
 See LICENSE for more details.
