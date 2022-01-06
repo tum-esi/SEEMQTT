@@ -1,10 +1,10 @@
 # <img src="images/project.svg" alt="about the project" width="30"/>  
 **SEEMQTT:** Secure End-to-End MQTT-based Communication for Mobile IoT Systems Using Key Secret-Sharing and Trust Delegation.
 ---
-# <img src="images/checkboxes.svg" alt="requirements" width="30" />  Components 
+# <img src="images/components.svg.svg" alt="components" width="30" />  Components 
 The system contains these main components: 
 1. The publisher which runs on the ESP32 platform (see folder **ESP32**)
-2. The Keystrors. Each Keystore can run on a separate RPI or a regular PC (see the folder **KeyStore** 
+2. The Keystrors. Each Keystore can run on a separate RPI or a regular PC (see the folder **KeyStore**)
 3. The Subscriber which receives the information published by the publisher (see the folder **Subscriber**)
 4. Security credentials. To set up such security credential, you may need to use the Key Generator tool (see folder **Tools**)  and the KeyNote trust managment system (see folder **KeyStore\KeyNote**).  
 5. Finally,  you need to install an MQTT broker. 
