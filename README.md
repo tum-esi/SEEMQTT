@@ -1,15 +1,15 @@
 # <img src="images/project.svg" alt="about the project" width="30"/>  
 **SEEMQTT:** Secure End-to-End MQTT-based Communication for Mobile IoT Systems Using Key Secret-Sharing and Trust Delegation.
 ---
-# <img src="images/components.svg" alt="components" width="30" />  Components 
-The system contains these main components: 
+# <img src="images/components.svg" alt="components" width="30" />  Components
+The system contains these main components:
 1. The publisher which runs on the ESP32 platform (see folder **ESP32**)
 2. The Keystrors. Each Keystore can run on a separate RPI or a regular PC (see the folder **KeyStore**)
 3. The Subscriber which receives the information published by the publisher (see the folder **Subscriber**)
 4. Security credentials. To set up such security credential, you may need to use the Key Generator tool (see folder **Tools**)  and the KeyNote trust managment system (see folder **KeyStore\KeyNote**).  
-5. Finally,  you need to install an MQTT broker. 
+5. Finally,  you need to install an MQTT broker.
 # <img src="images/checkboxes.svg" alt="requirements" width="30" />  Requirements
-## 1. Publisher 
+## 1. Publisher
 In SEEMQTT project, we use ESP32 board as an MQTT publisher and use Arduino IDE for programming ESP32 board. We implement the Boneh-Franklin Identity-Based Encryption (BF-IBE) based on  GMP and PBC libraries. We cross-compile both libraries for the ESP32 board. We present here the cross-compilation exmaple of GMP and PBC libraries for ESP32 board. You can do the Cross-Compilation by following instructions below or simply use our precompiled libraries, which you can find them in **ESP32/esp32_crosscompile**.
 
 Following **step 2-4** for cross-compilation or you can jump directly to **step 5** using our pre-compiled GMP and PBC libraries.
@@ -259,10 +259,10 @@ compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_
 </details>
 
 ## 2. KeyStore
-To compile and run the Keystroe components,  you need to install IBE, MQTT client, and OpenSSL libraries. 
-In our setup, the Keystores were running on Raspbery Pi 4. 
+To compile and run the Keystroe components,  you need to install IBE, MQTT client, and OpenSSL libraries.
+In our setup, the Keystores were running on Raspbery Pi 4.
 
-### 2.1 Install IBE Library on RPI 
+### 2.1 Install IBE Library on RPI
 <details>
 <summary> click for details </summary>
 Installing IBE requires the existence of both GMP and PBC libraries.
@@ -292,37 +292,55 @@ Installing IBE requires the existence of both GMP and PBC libraries.
     ```
 </details>
 
-### 2.2 Install MQTT client library and Openssl library 
+### 2.2 Install MQTT client library and Openssl library
 <details>
 <summary> click for details </summary>
-	
+
 - Install MQTT client library
-	  
+
 	```
 	  $ sudo apt install libmosquitto-dev
 	```
 - Install Openssl linrary
-	
+
 	```
 	  $ sudo apt-get install libssl-dev
 	```
-</details>	
-
-### 2.3 Compile KeyNote Library 
-<details>
-<summary> click for details </summary>
- You need to compile the KeyNote trust management library before running the Policy Evaluation Module on the RPI. Otherwise, the authorized subscribers will not get the secret shares from the KeyStroes. To compile the library, you need to change the directory to the **KeyStore/Keynote/** folder and then run ** make **	  
-
-	```
-	$ cd  KeyStore/Keynote/
-	$ make
-	```
-You can read more about how to use the KeyNote trust managemet system and the changes that we implement here: **KeyStore/Keynote/README.md**
 </details>
 
-### 2.4 Run the KeyStore and Key Evalaution Module 
+### 2.3 Compile KeyNote Library
+<details>
+<summary> click for details </summary>
+ You need to compile the KeyNote trust management library before running the Policy Evaluation Module on the RPI. Otherwise, the authorized subscribers will not get the secret shares from the KeyStroes. To compile the library, you need to change the directory to the KeyStore/Keynote/ folder and then run make.  
+You can read more about using the KeyNote trust management system and the changes that we have implemented on KeyStore/Keynote/README.md.
 
-## 3. Subscriber 
-## 4. Broker 
+```
+$ cd KeyStore/Keynote
+$ make
+```
+</details>
+
+### 2.4 Run the KeyStore and Key Evalaution Module
+<details>
+<summary> click for details </summary>
+
+- Compile and run KeyStore: the ID of the KyeStore must be provided.
+
+```
+$ cd KeyStore/KS
+$ make
+$./KeyStore ID ibe sss
+```
+- Then, compile and run the Policy Evalaution Module (the ID here is the same one used while running the KeyStore)
+
+```
+$ cd KeyStore/KsPEM
+$ make
+$./PEM ID  port
+```
+</details>
+
+## 3. Subscriber
+## 4. Broker
 # <img src="images/license.svg" alt="license" width="30">  License
 See LICENSE for more details.
