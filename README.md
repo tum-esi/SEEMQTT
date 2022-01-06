@@ -295,12 +295,13 @@ Installing IBE requires the existence of both GMP and PBC libraries.
 ### 2.2 Install MQTT client library and Openssl library 
 <details>
 <summary> click for details </summary>
-- Install the MQTT client library
+	
+- Install MQTT client library
 	  
 	```
 	  $ sudo apt install libmosquitto-dev
 	```
-- Install the Openssl linrary
+- Install Openssl linrary
 	
 	```
 	  $ sudo apt-get install libssl-dev
