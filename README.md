@@ -291,7 +291,13 @@ Installing IBE requires the existence of both GMP and PBC libraries.
     $ sudo make install
     ```
 </details>
-### 2.1 Install Mosquitoo client library 
+
+### 2.2 Install Mosquitoo client library 
+
+
+### 2.3 Compile KeyNote Library 
+
+### 2.4 Run the KeyStore and Key Evalaution Module 
 
 ## 3. Subscriber 
 ## 4. Broker 
