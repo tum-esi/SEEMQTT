@@ -305,7 +305,8 @@ Installing IBE requires the existence of both GMP and PBC libraries.
 	
 	```
 	  $ sudo apt-get install libssl-dev
-	  ```
+	```
+
 </details>	
 
 ### 2.3 Compile KeyNote Library 
