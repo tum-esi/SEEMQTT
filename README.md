@@ -362,7 +362,16 @@ $./Subscriber
 ```
 </details>
 
-##
 ## 4. Broker
+We use the Mosquitto as our MQTT broker. Run command to install the Mosquitto on your device.
+```bash
+sudo apt-get update
+sudo apt-get install mosquitto
+```
+The mosquitto broker should be successfully installed and started now. Run command to check mosquitto broker status.
+```bash
+service mosquitto status
+```
+
 # <img src="images/license.svg" alt="license" width="30">  License
 See LICENSE for more details.
