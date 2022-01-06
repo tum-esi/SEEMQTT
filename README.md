@@ -3,7 +3,7 @@
 ---
 # <img src="images/components.svg" alt="components" width="30" />  Components
 The system contains these main components:
-1. The publisher which runs on the ESP32 platform (see folder **ESP32**)
+1. The publisher which runs on the ESP32 platform (see the folder **ESP32**)
 2. The Keystrors. Each Keystore can run on a separate RPI or a regular PC (see the folder **KeyStore**)
 3. The Subscriber which receives the information published by the publisher (see the folder **Subscriber**)
 4. Security credentials. To set up such security credential, you may need to use the Key Generator tool (see folder **Tools**)  and the KeyNote trust managment system (see folder **KeyStore\KeyNote**).  
