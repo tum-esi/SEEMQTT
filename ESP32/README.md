@@ -1,4 +1,4 @@
-#SEEMQTT Arduino Client Library 
+# SEEMQTT Arduino Client Library 
 This folder contians: 
 - Arduino project to tset a  publisher that uses defualt MQTT (see [Clear-MQTT](Clear-MQTT))
 - Arduino project to tset a publisher  that uses MQTT over TLS (see [Clear-MQTT](Clear-MQTT)). 
