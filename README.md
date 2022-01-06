@@ -311,8 +311,8 @@ Installing IBE requires the existence of both GMP and PBC libraries.
 ### 2.3 Compile KeyNote Library
 <details>
 <summary> click for details </summary>
- You need to compile the KeyNote trust management library before running the Policy Evaluation Module on the RPI. Otherwise, the authorized subscribers will not get the secret shares from the KeyStroes. To compile the library, you need to change the directory to the KeyStore/Keynote/ folder and then run make.  
-You can read more about using the KeyNote trust management system and the changes that we have implemented on KeyStore/Keynote/README.md.
+	
+- You need to compile the KeyNote trust management library before running the Policy Evaluation Module on the RPI. Otherwise, the authorized subscribers will not get the secret shares from the KeyStroes. To compile the library, you need to change the directory to the [KeyStore/Keynote/](KeyStore/Keynote/) folder and then run make.  You can read more about using the KeyNote trust management system and the changes that we have implemented on  [here](KeyStore/Keynote/README.md).
 
 ```
 $ cd KeyStore/Keynote
@@ -342,7 +342,7 @@ $./PEM ID  port1
 
 ## 3. Subscriber
 - To compile and run the Subscriber component,  you need to install the  MQTT client and OpenSSL libraries (we have already discussed how to install these libraries in the KeyStore section). 
-- Some paprmerts (in [config.h](Subscriber/config.h) and subscriber.h) need to be adjusted before compiling and runiing the subscribers. 
+- Some paprmerts (in [config.h](Subscriber/config.h) and [subscriber.h](Subscriber/subscriber.h)) need to be adjusted before compiling and runiing the subscribers. 
 These papramerts are: 
 
 ```
