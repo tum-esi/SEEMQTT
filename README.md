@@ -8,7 +8,7 @@ The system contains these main components:
 3. The Subscriber which receives the information published by the publisher (see the folder **Subscriber**)
 4. Security credentials. To set up such security credential, you may need to use the Key Generator tool (see folder **Tools**)  and the KeyNote trust managment system (see folder **KeyStore\KeyNote**).  
 5. Finally,  you need to install an MQTT broker.
-# <img src="images/checkboxes.svg" alt="requirements" width="30" />  Requirements
+# <img src="images/checkboxes.svg" alt="requirements" width="30" />  Setup Requirements and Steps 
 ## 1. Publisher
 In SEEMQTT project, we use ESP32 board as an MQTT publisher and use Arduino IDE for programming ESP32 board. We implement the Boneh-Franklin Identity-Based Encryption (BF-IBE) based on  GMP and PBC libraries. We cross-compile both libraries for the ESP32 board. We present here the cross-compilation exmaple of GMP and PBC libraries for ESP32 board. You can do the Cross-Compilation by following instructions below or simply use our precompiled libraries, which you can find them in **ESP32/esp32_crosscompile**.
 
