@@ -2,6 +2,12 @@
 **SEEMQTT:** Secure End-to-End MQTT-based Communication for Mobile IoT Systems Using Key Secret-Sharing and Trust Delegation.
 ---
 # <img src="images/checkboxes.svg" alt="requirements" width="30" />  Components 
+The system contains these main components: 
+1. The publisher which runs on the ESP32 platform (see folder **ESP32**)
+2. The Keystrors. Each Keystore can run on a separate RPI or a regular PC (see the folder **KeyStore** 
+3. The Subscriber which receives the information published by the publisher (see the folder **Subscriber**)
+To set up the security credential, you may need to use the Keygernation tool (see folder **Tools**).  
+Finally,  you need to install an MQTT broker. 
 # <img src="images/checkboxes.svg" alt="requirements" width="30" />  Requirements
 In SEEMQTT project, we use ESP32 board as an MQTT publisher and use Arduino IDE for programming ESP32 board. We implement the Boneh-Franklin Identity-Based Encryption (BF-IBE) based on  GMP and PBC libraries. We cross-compile both libraries for the ESP32 board. We present here the cross-compilation exmaple of GMP and PBC libraries for ESP32 board. You can do the Cross-Compilation by following instructions below or simply use our precompiled libraries, which you can find them in **ESP32/esp32_crosscompile**.
 
