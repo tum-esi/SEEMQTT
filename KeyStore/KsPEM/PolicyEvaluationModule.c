@@ -17,7 +17,6 @@
 #include "config.h"
 
 
-
 //#define SRV_PORT 3333
 #define TRUE 1
 #define QLEN 20
