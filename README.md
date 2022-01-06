@@ -119,7 +119,7 @@ See also the specification from Arduino: https://arduino.github.io/arduino-cli/l
 <summary> click for details </summary>
 
 #### 1.4.1 Add pre-compiled GMP library in Arduino
-1. Constructed GMP library folder
+- Constructed GMP library folder
 ```
 Arduino/libraries/gmp
 ├── library.properties
@@ -128,8 +128,8 @@ Arduino/libraries/gmp
     │   └── libgmpesp32.a
     └── gmp.h
 ```
-2. Copy header files and pre-compiled GMP library from **/usr/local/lib/xtensa-esp32-elf/** to Arduino library folder and **libgmp.a** is renamed as **libgmpesp32.a** in order to differ from the GMP library under linux machine.
-3. library.properties file. **Note**: set precompiled flag to true.
+- Copy header files and pre-compiled GMP library from **/usr/local/lib/xtensa-esp32-elf/** to Arduino library folder and **libgmp.a** is renamed as **libgmpesp32.a** in order to differ from the GMP library under linux machine.
+- library.properties file. **Note**: set precompiled flag to true.
 ```
 name=GMP Library ESP32
 version=1.0.0
@@ -146,7 +146,7 @@ ldflags=-lgmpesp32
 ```
 
 #### 1.4.2 Add pre-compiled PBC library in Arduino
-1. Constructed PBC library folder
+-  Constructed PBC library folder
 ```
 Arduino/libraries/pbc/
 ├── library.properties
@@ -179,8 +179,8 @@ Arduino/libraries/pbc/
     ├── pbc_utils.h
     └── pbc_z.h
 ```
-2. Copy header files and pre-compiled PBC library from **/usr/local/lib/xtensa-esp32-elf/** to Arduino library folder and **libpbc.a** is renamed as **libpbcesp32.a** in order to differ from the PBC library under linux machine.
-3. library.properties file. **Note**: set precompiled flag to true.
+-  Copy header files and pre-compiled PBC library from **/usr/local/lib/xtensa-esp32-elf/** to Arduino library folder and **libpbc.a** is renamed as **libpbcesp32.a** in order to differ from the PBC library under linux machine.
+-  library.properties file. **Note**: set precompiled flag to true.
 ```
 name=PBC_Library(Pairing Based Cryptography) ESP32
 version=1.0.0
@@ -198,16 +198,16 @@ ldflags=-lpbcesp32
 #### 1.4.3 Change platform.txt in Arduino in order to use pre-compiled library
 See also the discussion for more details: https://forum.arduino.cc/index.php?topic=653746.0 \
 **platform.txt**: file is located in **~/.arduino15/packages/esp32/hardware/esp32/1.0.4** (under normal user not root).
-1. Add this line anywhere in platform.txt
+-  Add this line anywhere in platform.txt
 ```
 compiler.libraries.ldflags=
 ```
-2. Add {compiler.libraries.ldflags} to recipe.c.combine.pattern
+- Add {compiler.libraries.ldflags} to recipe.c.combine.pattern
 ```
 recipe.c.combine.pattern="{compiler.path}{compiler.c.elf.cmd}" {compiler.c.elf.flags} {compiler.c.elf.extra_flags} {compiler.libraries.ldflags} -Wl,--start-group {object_files} "{archive_file_path}" {compiler.c.elf.libs} -Wl,--end-group -Wl,-EL -o "{build.path}/{build.project_name}.elf"
 
 ```
-3. Add this tow flages the end of the file
+- Add this tow flages the end of the file
 ```
 compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_http_server -lbtdm_app -lspiffs -lbootloader_sup    port -lmdns -lnvs_flash -lfatfs -lpp -lnet80211 -ljsmn -lface_detection -llibsodium -lvfs -ldl_lib -llog -lfreertos -lcxx -lsmar    tconfig_ack -lxtensa-debug-module -lheap -ltcpip_adapter -lmqtt -lulp -lfd -lfb_gfx -lnghttp -lprotocomm -lsmartconfig -lm -leth    ernet -limage_util -lc_nano -lsoc -ltcp_transport -lc -lmicro-ecc -lface_recognition -ljson -lwpa_supplicant -lmesh -lesp_https_    ota -lwpa2 -lexpat -llwip -lwear_levelling -lapp_update -ldriver -lbt -lespnow -lcoap -lasio -lnewlib -lconsole -lapp_trace -les    p32-camera -lhal -lprotobuf-c -lsdmmc -lcore -lpthread -lcoexist -lfreemodbus -lspi_flash -lesp-tls -lwpa -lwifi_provisioning -l    wps -lesp_adc_cal -lesp_event -lopenssl -lesp_ringbuf -lfr  **-lgmpesp32** **-lpbcesp32** -lstdc++
 ```
@@ -233,12 +233,12 @@ To use these libraries, you must:
 <details>
 <summary> click for details </summary>
 
-### 1.5.1 Add pre-compiled libraries into Arduino libraries folder
+#### 1.5.1 Add pre-compiled libraries into Arduino libraries folder
 Locating the Arduino libraries folder:
 - in case of using Linux:  **Arduino/libraries/**
 - in case of using Windows 10: **C:\Users\usename\Documents\Arduino\libraries**
 
-### 1.5.2 Change platform.txt in Arduino in order to use the pre-compiled libraries
+#### 1.5.2 Change platform.txt in Arduino in order to use the pre-compiled libraries
 Locating the platform.txt:
 - in case of using Linux: **~/.arduino15/packages/esp32/hardware/esp32/1.0.4**(under normal user not root)
 - in case of using Windows 10: **C:\Users\usename\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.4\**
