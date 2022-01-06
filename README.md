@@ -259,10 +259,10 @@ compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_
 </details>
 
 ## 2. KeyStore
-To compile and run the Keystroe components,  you need to install IBE library and mosquitto library. 
+To compile and run the Keystroe components,  you need to install IBE, MQTT client, and OpenSSL libraries. 
 In our setup, the Keystores were running on Raspbery Pi 4. 
 
-### 2.1 Installing IBE Library on RPI 
+### 2.1 Install IBE Library on RPI 
 <details>
 <summary> click for details </summary>
 Installing IBE requires the existence of both GMP and PBC libraries.
@@ -292,8 +292,18 @@ Installing IBE requires the existence of both GMP and PBC libraries.
     ```
 </details>
 
-### 2.2 Install Mosquitoo client library 
-
+### 2.2 Install MQTT client library and Openssl library 
+<details>
+<summary> click for details </summary>
+- ####  Install the MQTT client library
+	  ```
+	  $ sudo apt install libmosquitto-dev
+	  ```
+- ####  Install the Openssl linrary
+	  ```
+	  $ sudo apt-get install libssl-dev
+	  ```
+</details>	
 
 ### 2.3 Compile KeyNote Library 
 
