@@ -291,10 +291,8 @@ Installing IBE requires the existence of both GMP and PBC libraries.
     $ sudo make install
     ```
 </details>
-### 2.1 Install IBE 
-<details>
-<summary> click for details </summary>
-</details>
+### 2.1 Install Mosquitoo client library 
+
 ## 3. Subscriber 
 ## 4. Broker 
 # <img src="images/license.svg" alt="license" width="30">  License
