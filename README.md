@@ -321,6 +321,23 @@ $ make
 </details>
 
 ### 2.4 Run the KeyStore and Key Evalaution Module 
+<details>
+<summary> click for details </summary>
+- Compile and run KeyStore: the ID of the KyeStore must be provided.
+	
+```
+$ cd KeyStore/KS
+$ make 
+$./KeyStore ID ibe sss
+```
+- then, compile and run the Policy Evalaution Module (the ID here is the same one used while running the KeyStore)
+	
+```
+$ cd KeyStore/KsPEM 
+$ make 
+$./PEM ID  port
+```
+</details>
 
 ## 3. Subscriber 
 ## 4. Broker 
