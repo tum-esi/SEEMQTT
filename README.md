@@ -259,7 +259,48 @@ compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_
 </details>
 
 ## KeyStore
-## Subscriber 
+To compile and run the Keystroe components,  you need to install IBE library and mosquitto library. 
+In our setup, the Keystores were running on Raspbery Pi 4. 
+
+### Install IBE 
+<details>
+<summary> click for details </summary>
+Installing IBE requires the existence of both GMP and PBC libraries.
+
+- #### Install libgmp-dev and libssl-dev
+
+  ```
+  $ sudo apt install libgmp3-dev
+  $ sudo apt install libssl-dev
+  ```
+
+- #### Install libssl-dev
+
+  ```
+  $ sudo apt install libssl-dev
+  ```
+  
+- #### Install pbc
+
+  - `$ wget https://crypto.stanford.edu/pbc/files/pbc-0.5.14.tar.gz
+    `
+
+  - Install flex and bison if they are not have installed before
+
+	  ```
+	  $ sudo apt-get install flex
+	  $ sudo apt-get install bison
+	  ```
+
+  - Unzip the pbcXXXXX.gz file and then cd inside the unzipped folder
+
+  - ```
+    $ ./configure
+    $ make
+    $ sudo make install
+    ```
+</details>
+  ## Subscriber 
 ## Broker 
 # <img src="images/license.svg" alt="license" width="30">  License
 See LICENSE for more details.
