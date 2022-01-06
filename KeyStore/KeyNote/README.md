@@ -1,7 +1,7 @@
 # The KeyNote Trust-Management System 
 You can download the original KeyNote trust management library from here: https://www.cs.columbia.edu/~angelos/keynote.html. 
 
-#### New Features 
+##New Features 
 
 Few changes were performed on the original library. These changes include:
 
@@ -9,7 +9,7 @@ Few changes were performed on the original library. These changes include:
 - Adding the "Delegate" section on the credential to determine whether the credential can be further delegated or not. 
 - Making the library compatible with the latest version of the OpenSSL library. 
 
-#### How to use the library  
+## How to use the library  
 
 - The structure of the credential  
 
