@@ -228,7 +228,7 @@ int __nlocale_changed = 0;
 </details>
 
 ### 1.5. Using pre-compiled GMP and PBC libraries
-User can find a pre-compiled version of both libraries in the folder: **ESP32/esp32_crosscompile** \
+User can find a pre-compiled version of both libraries in the folder[ESP32/esp32_crosscompile](ESP32/esp32_crosscompile)
 To use these libraries, you must:
 <details>
 <summary> click for details </summary>
@@ -320,7 +320,7 @@ $ make
 ```
 </details>
 
-### 2.4 Run the KeyStore and Key Evalaution Module
+### 2.4 Run the KeyStore and Policy Evalaution Module (PEM)
 <details>
 <summary> click for details </summary>
 
@@ -334,7 +334,7 @@ $./KeyStore ID1 ibe sss
 - Then, compile and run the Policy Evalaution Module (the ID here is the same one used while running the KeyStore)
 
 ```
-$ cd KeyStore/KsPEM
+$ cd KeyStore/KSPEM
 $ make
 $./PEM ID  port1
 ```
