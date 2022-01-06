@@ -312,11 +312,10 @@ Installing IBE requires the existence of both GMP and PBC libraries.
 <details>
 <summary> click for details </summary>
  You need to compile the KeyNote trust management library before running the Policy Evaluation Module on the RPI. Otherwise, the authorized subscribers will not get the secret shares from the KeyStroes. To compile the library, you need to change the directory to the KeyStore/Keynote/ folder and then run make	  
-
-	```
-	$ cd  KeyStore/Keynote/
-	$ make
-	```
+  ```
+  $ sudo apt install libgmp3-dev
+  $ sudo apt install libssl-dev
+  ```
 You can read more about how to use the KeyNote trust managemet system and the changes that we implement here: **KeyStore/Keynote/README.md** 
 </details>
 
