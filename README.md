@@ -306,20 +306,19 @@ Installing IBE requires the existence of both GMP and PBC libraries.
 	```
 	  $ sudo apt-get install libssl-dev
 	```
-
 </details>	
 
 ### 2.3 Compile KeyNote Library 
 <details>
 <summary> click for details </summary>
- You need to compile the KeyNote trust management library before running the Policy Evaluation Module on the RPI. Otherwise, the authorized subscribers will not get the secret shares from the KeyStroes. To compile the library, you need to change the directory to the **KeyStore/Keynote/** folder and then run **make**
- 	  
-	```
-	  $ cd  KeyStore/Keynote/
-	  $ make
+ You need to compile the KeyNote trust management library before running the Policy Evaluation Module on the RPI. Otherwise, the authorized subscribers will not get the secret shares from the KeyStroes. To compile the library, you need to change the directory to the **KeyStore/Keynote/** folder and then run **make**	  
+```
+	$ cd  KeyStore/Keynote/
+	$ make
 	```
 You can read more about how to use the KeyNote trust managemet system and the changes that we implement here: **KeyStore/Keynote/README.md**
 </details>
+
 ### 2.4 Run the KeyStore and Key Evalaution Module 
 
 ## 3. Subscriber 
