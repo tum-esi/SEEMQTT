@@ -3,14 +3,14 @@
 ---
 # <img src="images/components.svg" alt="components" width="30" />  Components
 The system contains these main components:
-1. The publisher which runs on the ESP32 platform (see the folder **ESP32**)
-2. The Keystrors. Each Keystore can run on a separate RPI or a regular PC (see the folder **KeyStore**)
-3. The Subscriber which receives the information published by the publisher (see the folder **Subscriber**)
-4. Security credentials. To set up such security credential, you may need to use the Key Generator tool (see folder **Tools**)  and the KeyNote trust managment system (see folder **KeyStore\KeyNote**).  
+1. The publisher which runs on the ESP32 platform (see [ESP32](ESP32))
+2. The Keystrors. Each Keystore can run on a separate RPI or a regular PC (see  [KeyStore](KeyStore))
+3. The Subscriber which receives the information published by the publisher (see the folder [Subscriber](Subscriber))
+4. Security credentials. To set up such security credential, you may need to use the Key Generator tool (see [Tools](Tools))  and the KeyNote trust managment system (see [KeyStore\KeyNote](KeyStore\KeyNote)).  
 5. Finally,  you need to install an MQTT broker.
 # <img src="images/checkboxes.svg" alt="requirements" width="30" />  Setup Requirements and Steps 
 ## 1. Publisher
-In SEEMQTT project, we use ESP32 board as an MQTT publisher and use Arduino IDE for programming ESP32 board. We implement the Boneh-Franklin Identity-Based Encryption (BF-IBE) based on  GMP and PBC libraries. We cross-compile both libraries for the ESP32 board. We present here the cross-compilation exmaple of GMP and PBC libraries for ESP32 board. You can do the Cross-Compilation by following instructions below or simply use our precompiled libraries, which you can find them in **ESP32/esp32_crosscompile**.
+In SEEMQTT project, we use ESP32 board as an MQTT publisher and use Arduino IDE for programming ESP32 board. We implement the Boneh-Franklin Identity-Based Encryption (BF-IBE) based on  GMP and PBC libraries. We cross-compile both libraries for the ESP32 board. We present here the cross-compilation exmaple of GMP and PBC libraries for ESP32 board. You can do the Cross-Compilation by following instructions below or simply use our precompiled libraries, which you can find them in [ESP32/esp32_crosscompile](ESP32/esp32_crosscompile).
 
 Following **step 2-4** for cross-compilation or you can jump directly to **step 5** using our pre-compiled GMP and PBC libraries.
 
@@ -312,7 +312,7 @@ Installing IBE requires the existence of both GMP and PBC libraries.
 <details>
 <summary> click for details </summary>
 	
-- You need to compile the KeyNote trust management library before running the Policy Evaluation Module on the RPI. Otherwise, the authorized subscribers will not get the secret shares from the KeyStroes. To compile the library, you need to change the directory to the [KeyStore/KeyNote/](KeyStore/Keynote/) folder and then run make.  You can read more about using the KeyNote trust management system and the changes that we have implemented on  [here](KeyStore/KeyNote/README.md).
+- You need to compile the KeyNote trust management library before running the Policy Evaluation Module on the RPI. Otherwise, the authorized subscribers will not get the secret shares from the KeyStroes. To compile the library, you need to change the directory to the [KeyStore/KeyNote/](KeyStore/KeyNote/) folder and then run make.  You can read more about using the KeyNote trust management system and the changes that we have implemented on  [here](KeyStore/KeyNote/README.md).
 
 ```
 $ cd KeyStore/Keynote
