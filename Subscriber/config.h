@@ -18,8 +18,8 @@
 
 
 //#define CRYP_DBG
-#define DBG  /*Debuging Messges */
-//#define DDBG /*Print more debuging messeges*/
+#define DBG               /* Debuging Messges  */
+//#define DDBG            /* Print more debuging messeges */
 #define SELF_TEST
 #define TOPIC_SIZE 50
 #define BLOCK_SIZE 16
@@ -31,21 +31,20 @@
 
 
 
-#define KSN_NUM 3
-#define MAX_SK_USAGE 5 // a session key can only be used in MAX_SK_USAGE times communication, then needs to be updated
 
 
 /* Shamir Secret Sharing Params */
-#define PRIME 257
-#define SSS_T 2 // SSS threshold (<= KSN_NUM)
-#define SSS_SIZE 39 // 6 + 2*BLOCK_SIZE + 1
+#define PRIME 257         /* Debuging Messges  */
+#define KSN_NUM 3         /*  The number of KeyStores */
+#define SSS_T 2           /*  SSS threshold (<= KSN_NUM) */
+#define SSS_SIZE 39       /*  6 + 2*BLOCK_SIZE + 1 */
 
 
 
-/* Paths  and the name of the credentials, pk, asserts */ 
-#define CR1  "CR_Pub_CA"  // CR^(CA)_SUB
-#define CR2	 "CR_CA_Sub"  // CR(Pub)_(CA)
-#define SUBPK "pkK_Sub" //pkK_Sub
+/* Paths  and the name of the credentials, pk, asserts */
+#define CR1  "cre/CR_Pub_CA"  /* CR^(CA)_SUB */
+#define CR2	 "cre/CR_CA_Sub"  /* CR(Pub)_(CA) */
+#define SUBPK "cre/pkK_Sub"   /* pkK_Sub  */
 
 
 #endif

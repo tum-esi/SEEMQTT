@@ -1,24 +1,22 @@
-/**
- * gcc hks.c -o ks -lmosquitto -lssl -lcrypto
-
- * The implementation subscriber on a Linux machine
+/*
+ * Copyright (c) 2021 Hangmao Liu <liuhangmao@hotmail.com>
+ *                    Mohammad Hamad <mohammad.hamad@tum.de>
  *
- * @download: apt install libmosquitto-dev to download the mqtt client c library
- *            apt install libssl-dev to download openssl c library
+ * This library is free software; you can redistribute it and/or modify
+ * it under the terms of the MIT license. See COPYING for details.
  *
- * @compile: gcc KeyStore.c -o ks -lmosquitto -lssl -lcrypto
- *
- * @functions:
- *    mosquitto_connect()
- *    mosquitto_disconnect()
- *    mosquitto_subscribe()
- *    mosquitto_unsubscribe()
- *    mosquitto_publish()
- *    mosquitto_loop()
- */
+ * This file includes the implementation of the Subscriber of SEEMQTT
+ * Before running the subscriber, you need to set up some parameters in config.h and subscriber.h:
+ * 1- KSN_NUM           //  The number of KeyStores
+ * 2- SSS_T  2          //  Shamir's secret sharing threshold
+ * 3- KSids[KSN_NUM]    //  The IDs of KeyStres
+*  4- KSports[KSN_NUM]  //  The ports of every PEM
+*  5- KSnames[KSN_NUM] // The IP address of the KeyStores
+*  6- The folder cre should includes all the required credentials (except the one that will be recived from the publisher), the subscriber's public key, and the asserts file
+*/
 
 
-# include "sub.h"
+# include "subscribe.h"
 static bool run = true;
 
 
