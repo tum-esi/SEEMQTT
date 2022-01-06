@@ -2,7 +2,7 @@
 **SEEMQTT** is a project aiming at securing End-to-End MQTT-based Communication for Mobile IoT Systems Using Key Secret-Sharing and Trust Delegation.
 ---
 # <img src="images/checkboxes.svg" alt="requirements" width="30" />  Requirements
-In SEEMQTT project, we use ESP32 board as our MQTT publisher and use Arduino IDE for programming ESP32 board. We implement the Boneh-Franklin Identity-Based Encryption (BF-IBE) based on GMP and PBC libraries and we cross compile both libraries for ESP32 board. We present here the cross-compilation exmaple of GMP and PBC libraries for ESP32 board. You can do the Cross-Compilation by following instructions below or simply use our precompiled libraries, which you can find them in **/Code/ESP32/IBE/ibe_esp32/esp32_crosscompile**.
+In SEEMQTT project, we use ESP32 board as our MQTT publisher and use Arduino IDE for programming ESP32 board. We implement the Boneh-Franklin Identity-Based Encryption (BF-IBE) based on GMP and PBC libraries and we cross compile both libraries for ESP32 board. We present here the cross-compilation exmaple of GMP and PBC libraries for ESP32 board. You can do the Cross-Compilation by following instructions below or simply use our precompiled libraries, which you can find them in **ESP32/esp32_crosscompile**.
 
 Following **step 2-4** for cross-compilation or you can jump directly to **step 5** using our pre-compiled GMP and PBC libraries.
 
@@ -220,7 +220,7 @@ int __nlocale_changed = 0;
 </details>
 
 ## 5. Using pre-compiled GMP and PBC libraries
-User can find a pre-compiled version of both libraries in the folder: **Code/ESP32/IBE/ibe_esp32/esp32_crosscompile** \
+User can find a pre-compiled version of both libraries in the folder: **ESP32/esp32_crosscompile** \
 To use these libraries, you must:
 <details>
 <summary> click for details </summary>
