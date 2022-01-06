@@ -342,7 +342,7 @@ $./PEM ID  port1
 
 ## 3. Subscriber
 - To compile and run the Subscriber component,  you need to install the  MQTT client and OpenSSL libraries (we have already discussed how to install these libraries in the KeyStore section). 
-- Some paprmerts (in config.h and subscriber.h) need to be adjusted before compiling and runiing the subscribers. 
+- Some paprmerts (in [config.h](Subscriber/config.h) and subscriber.h) need to be adjusted before compiling and runiing the subscribers. 
 These papramerts are: 
 
 ```
