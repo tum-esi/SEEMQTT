@@ -1,5 +1,6 @@
 # The KeyNote Trust-Management System 
 You can download the original KeyNote trust management library from here: https://www.cs.columbia.edu/~angelos/keynote.html. 
+To read more about the the system, you can read [The KeyNote Trust-Management System, Version 2"](https://datatracker.ietf.org/doc/rfc2704/)
 
 ## New Features 
 
