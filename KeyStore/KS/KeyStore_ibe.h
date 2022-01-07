@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <assert.h> 
+#include <assert.h>
 #include <fcntl.h>
-#include <math.h>   
+#include <math.h>
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
 #include <openssl/rsa.h>
@@ -19,7 +19,7 @@
 #include <mosquitto.h>
 #include <pbc/pbc.h>
 
-#include "type.h
+#include "type.h"
 #include "db.h"
 
 /* definition of curve parameters */
