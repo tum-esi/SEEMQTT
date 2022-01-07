@@ -18,9 +18,9 @@
 
 
 
-int KSids[KSN_NUM] = {1,2,3}; 
-int KSports[KSN_NUM] = {3331,3332,3333}; 
-char * KSnames[KSN_NUM] = {"192.168.0.101", "192.168.0.101","localhoat"}; 
+int KSids[KSN_NUM] = {1,2,3};
+int KSports[KSN_NUM] = {3331,3332,3333};
+char * KSnames[KSN_NUM] = {"192.168.0.103", "192.168.0.104","192.168.0.106"}; 
 
 
 
@@ -30,10 +30,9 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
 void PrintHEX(unsigned char* str, int len);
 
 
-char *  getpk( int * len); 
+char *  getpk( int * len);
 char *  getCredentials(char * name, int *len);
-char *  GetShare(char * host , int port , int * re); 
-unsigned char * ComShare(); 
+char *  GetShare(char * host , int port , int * re);
+unsigned char * ComShare();
 
 #endif /* end of SUB_H_ */
-
