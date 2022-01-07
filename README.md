@@ -258,6 +258,21 @@ compiler.c.elf.libs=-lgcc -lesp32 -lphy -lesp_http_client -lmbedtls -lrtc -lesp_
 ```
 </details>
 
+### 1.6. Install SEEMQTT library
+You can find the **SEEMQTT** library [here](ESP32/SEEMQTT). To use the library: 
+
+#### 1.6.1 Move the libraries into Arduino libraries folder
+Locating the Arduino libraries folder:
+- in case of using Linux:  **Arduino/libraries/**
+- in case of using Windows 10: **C:\Users\usename\Documents\Arduino\libraries**
+
+### 1.6.2 Set up important paramertes 
+Few papramertrs in [secconfig.h](ESP32/SEEMQTT/secconfig.h) need to be spesifiecd before running any publisher. 
+```
+KSN_NUM           //  The number of KeyStores. you can find it in [secconfig.h](ESP32/SEEMQTT/secconfig.h)
+SSS_T            //  Shamir's secret sharing threshold. this should be consistent with the parameter selected in the publisher
+```
+
 ## 2. KeyStore
 To compile and run the Keystroe components,  you need to install IBE, MQTT client, and OpenSSL libraries.
 In our setup, the Keystores were running on Raspbery Pi 4.
