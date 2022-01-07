@@ -269,8 +269,8 @@ Locating the Arduino libraries folder:
 ### 1.6.2 Set up important paramertes 
 Few papramertrs in [secconfig.h](ESP32/SEEMQTT/secconfig.h) need to be spesifiecd before running any publisher. 
 ```
-KSN_NUM           //  The number of KeyStores. you can find it in [secconfig.h](ESP32/SEEMQTT/secconfig.h)
-SSS_T            //  Shamir's secret sharing threshold. this should be consistent with the parameter selected in the publisher
+KSN_NUM           //  The number of KeyStores. 
+SSS_T             //  Shamir's secret sharing threshold. this should be consistent with the parameter selected in the publisher
 ```
 
 ## 2. KeyStore
