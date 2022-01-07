@@ -8,4 +8,3 @@ This folder contains:
 - The cross-compiled GMP and PBC libaries (see [esp32_crosscompile](esp32_crosscompile)).
 - Arduino project to test and evaluate the performance evaluation of the four primary algorithms of IBE: setup, extract, encryption, and decryption. We use multiple message sizes for evaluating the encryption and decryption (Setup and extract algorithms are independent of the message size). Also, the program measures the one-time overhead (OTO) during the encryption. (see [ibe_esp32.ino](esp32_ibe/ibe_esp32.ino)).
 
-## Set up SEEMQTT library 
