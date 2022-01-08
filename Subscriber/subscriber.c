@@ -181,7 +181,12 @@ void KsCallback(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
                 printf ("Time to decrypt the message = %f  (ms) \n", t_DtM / 1000000);
 
                 printf("Plain text:\n");
-                BIO_dump_fp(stdout, plain, res);
+                //BIO_dump_fp(stdout, plain, res);
+                float  lat;
+                float  longt;
+                memcpy(&lat, plain, sizeof(float));
+                memcpy(&longt, plain+sizeof(float), sizeof(float));
+                printf("Lat: %f  , Long: %f  \n", lat, longt);
             }
             else
                 handleErrors();
@@ -460,7 +465,7 @@ char * GetShare(char * srv_hostname, int port, int * len)
     #endif
 	if (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
         #ifdef DBG
-	      printf("  Connection was refused whilt trying to connect to: %d", port );
+	      printf("Connection was refused!\n", port );
         #endif
           *len = -1;
           return NULL ;
