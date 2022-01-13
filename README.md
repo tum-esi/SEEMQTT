@@ -388,7 +388,7 @@ The mosquitto broker should be successfully installed and started now. Run comma
 service mosquitto status
 ```
 # Demo
-https://youtu.be/p2NcUDX7NME
+https://youtu.be/-nxSd2NRvLU
 
 # <img src="images/license.svg" alt="license" width="30">  License
 See LICENSE for more details.
