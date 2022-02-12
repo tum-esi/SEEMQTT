@@ -1,5 +1,5 @@
 # <img src="images/project.svg" alt="about the project" width="30"/>  
-**SEEMQTT:** Secure End-to-End MQTT-based Communication for Mobile IoT Systems Using Key Secret-Sharing and Trust Delegation.
+**SEEMQTT:** Secure End-to-End MQTT-based Communication for Mobile IoT Systems Using Secret-Sharing and Trust Delegation.
 ---
 # <img src="images/components.svg" alt="components" width="30" />  Components
 The system contains these main components:
